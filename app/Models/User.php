@@ -23,9 +23,28 @@ class User extends Authenticatable
         'password',
         'first_name',
         'last_name',
-        
+        'phone_number',
+        'avatar_url',
+        'gender',
+        'date_of_birth',
+        'role',
+        'status',
     ];
-
+    public function department(){
+        return $this->belongsTo(Department::class);
+    }
+    public function classCourseAssignments(){
+        return $this->hasMany(ClassCourseAssignment::class,'teacher_id');
+    }
+    public function attendances(){
+        return $this->hasMany(Attendance::class,'student_id');
+    }
+    public function leaveRequests(){
+        return $this->hasMany(LeaveRequest::class,'teacher_id');
+    }
+    public function makeupClasses(){
+        return $this->hasMany(MakeupClass::class,'teacher_id');
+    }
     /**
      * The attributes that should be hidden for serialization.
      *

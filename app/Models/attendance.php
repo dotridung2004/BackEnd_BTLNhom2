@@ -4,7 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class attendance extends Model
+class Attendance extends Model
 {
-    //
+    protected $fillable = [
+        'schedule_id',
+        'student_id',
+        'status',
+        'note',
+    ];
+    public function schedule(){
+        return $this->belongsTo(Schedule::class);
+    }
+    public function student(){
+        return $this->belongsTo(User::class,'student_id');
+    }
 }
