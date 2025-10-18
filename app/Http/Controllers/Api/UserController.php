@@ -3,71 +3,113 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lấy danh sách tất cả người dùng
      */
     public function index()
     {
-        return User::all();
+        $users = User::all();
+        return response()->json($users, 200);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Tạo mới người dùng
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                'unique:categories,name', // phải là duy nhất trong bảng categories
-            ],
+        $validated = $request->validate([
+            'name'          => 'required|string|max:255',
+            'first_name'    => 'required|string|max:100',
+            'last_name'     => 'required|string|max:100',
+            'email'         => 'required|email|unique:users,email',
+            'password'      => 'required|string|min:6',
+            'phone_number'  => 'required|string|max:20',
+            'avatar_url'    => 'nullable|string',
+            'gender'        => ['nullable', Rule::in(['male', 'female', 'other'])],
+            'date_of_birth' => 'nullable|date',
+            'role'          => ['required', Rule::in(['student', 'teacher', 'training_office', 'head_of_department'])],
+            'status'        => ['required', Rule::in(['active', 'inactive', 'banned'])],
         ]);
 
-        $user = User::create($request->only(['name']));
+        $validated['password'] = Hash::make($validated['password']);
 
-        return response()->json($user, 201); 
+        $user = User::create($validated);
+
+        return response()->json([
+            'message' => 'Tạo tài khoản thành công',
+            'data'    => $user,
+        ], 201);
     }
 
     /**
-     * Display the specified resource.
+     * Xem thông tin 1 người dùng
      */
-    public function show(User $user)
+    public function show($id)
     {
-        return $user;
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'Không tìm thấy người dùng'], 404);
+        }
+        return response()->json($user, 200);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật thông tin người dùng
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, $id)
     {
-        $request->validate([
-            'name' => [
-                'sometimes',
-                'string',
-                'max:255',
-                Rule::unique('categories', 'name')->ignore($user->id),
-            ],
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'Không tìm thấy người dùng'], 404);
+        }
+
+        $validated = $request->validate([
+            'name'          => 'sometimes|required|string|max:255',
+            'first_name'    => 'sometimes|required|string|max:100',
+            'last_name'     => 'sometimes|required|string|max:100',
+            'email'         => ['sometimes','required','email', Rule::unique('users','email')->ignore($user->id)],
+            'password'      => 'nullable|string|min:6',
+            'phone_number'  => 'sometimes|required|string|max:20',
+            'avatar_url'    => 'nullable|string',
+            'gender'        => ['nullable', Rule::in(['male', 'female', 'other'])],
+            'date_of_birth' => 'nullable|date',
+            'role'          => ['sometimes', Rule::in(['student', 'teacher', 'training_office', 'head_of_department'])],
+            'status'        => ['sometimes', Rule::in(['active', 'inactive', 'banned'])],
         ]);
 
-        $user->update($request->only(['name']));
+        if (!empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
 
-        return response()->json($user, 200); // 200 OK
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Cập nhật thông tin thành công',
+            'data'    => $user,
+        ], 200);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa người dùng
      */
-    public function destroy(User $user)
+    public function destroy($id)
     {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'Không tìm thấy người dùng'], 404);
+        }
+
         $user->delete();
-        return response()->json(null,204);
+
+        return response()->json(['message' => 'Xóa người dùng thành công'], 200);
     }
 }
