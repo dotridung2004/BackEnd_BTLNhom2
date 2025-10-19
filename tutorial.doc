@@ -1,10 +1,12 @@
-1.Chạy lệnh tạo docker 
+1.Tạo bảng
+    php artisan migrate
+2.Chạy lệnh tạo docker 
     docker-compose up -d --build
-2.Tạo bảng trong docker
+3.Tạo bảng trong docker
     docker-compose exec app php artisan migrate
-3.Thêm dữ liệu vào các bảng tương ứng 
+4.Thêm dữ liệu vào các bảng tương ứng 
     File btl_db.sql
-4.Các mật khẩu sau khi hash
+5.Các mật khẩu sau khi hash
     > Hash::make('abc123');
     = "$2y$12$/j97xp9DUInYX9th9jQ1EOPIwC8oNPiNWlyQH5jHHqf13sekq1KV6"
 
