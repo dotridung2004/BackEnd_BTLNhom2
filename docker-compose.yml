@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: laravel_app
+    container_name: laravel_btl
     restart: unless-stopped
     working_dir: /var/www/
     volumes:
@@ -17,7 +17,7 @@ services:
   # Nginx Service
   nginx:
     image: nginx:alpine
-    container_name: nginx
+    container_name: nginx_btl
     restart: unless-stopped
     ports:
       - "8000:80" # Map port 8000 của máy host vào port 80 của container
@@ -32,7 +32,7 @@ services:
   # MySQL Service
   db:
     image: mysql:8.0
-    container_name: mysql_db
+    container_name: mysql_db_btl
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
@@ -47,7 +47,7 @@ services:
       - app-network
   redis:
     image: redis:alpine
-    container_name: redis
+    container_name: redis_btl
     restart: unless-stopped
     ports:
     - "6379:6379"
