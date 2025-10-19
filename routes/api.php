@@ -1,5 +1,6 @@
 <?php 
 // routes/api.php
+use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserController;
@@ -23,3 +24,4 @@ Route::apiResource('leaverequests', LeaveRequestController::class);
 Route::apiResource('makeupclasses', MakeupClassController::class);
 Route::apiResource('rooms', RoomController::class);
 Route::apiResource('schedules', ScheduleController::class);
+Route::post('login', [AuthController::class, 'login']);
