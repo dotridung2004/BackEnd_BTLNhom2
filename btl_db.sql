@@ -1017,3 +1017,54 @@ insert into makeup_classes (id, teacher_id, original_schedule_id, new_schedule_i
 insert into makeup_classes (id, teacher_id, original_schedule_id, new_schedule_id, status) values (98, 8, 48, 24, 'pending');
 insert into makeup_classes (id, teacher_id, original_schedule_id, new_schedule_id, status) values (99, 19, 42, 20, 'done');
 insert into makeup_classes (id, teacher_id, original_schedule_id, new_schedule_id, status) values (100, 4, 73, 28, 'pending');
+
+
+
+-- Tạo 1 môn học (Giả sử ID=1)
+INSERT INTO `courses` (id, name, code, credits) 
+VALUES (101, 'Phát triển ứng dụng di động', 'CSE441', 3);
+
+-- Tạo 2 lớp học (Giả sử ID=1 và ID=2)
+INSERT INTO `classes` (id, name, semester, academic_year) 
+VALUES (101, 'Lớp 65CNTT-1', 'HK1', '2025-2026');
+INSERT INTO `classes` (id, name, semester, academic_year) 
+VALUES (102, 'Lớp 65CNTT-2', 'HK1', '2025-2026');
+
+-- Tạo 2 phòng học (Giả sử ID=1 và ID=2)
+INSERT INTO `rooms` (id, name, capacity, location) VALUES
+(101, 'Phòng 101-B5', 60, 6),
+(102, 'Phòng 202-B5', 60, 2)
+
+-- Phân công 1: User 35 dạy Môn 1 cho Lớp 1 (Giả sử ID phân công = 1)
+INSERT INTO `class_course_assignments` (id, class_id, course_id, teacher_id) 
+VALUES (101, 1, 1, 35);
+
+-- Phân công 2: User 35 dạy Môn 1 cho Lớp 2 (Giả sử ID phân công = 2)
+INSERT INTO `class_course_assignments` (id, class_id, course_id, teacher_id) 
+VALUES (102, 2, 1, 35);
+
+
+-- --------------------------------------------------------
+-- BƯỚC 3: TẠO LỊCH DẠY HÔM NAY (21/10/2025)
+-- (Đây là dữ liệu chính mà ứng dụng sẽ gọi)
+-- --------------------------------------------------------
+
+-- Lịch dạy 1 (Sáng): Dùng Phân công 1, tại Phòng 1
+INSERT INTO `schedules` (class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES (
+    101, -- ID của Phân công 1 (User 35 + Lớp 1)
+    101, -- ID của Phòng 1 (P.201)
+    '2025-10-21', -- Ngày hôm nay
+    'Tiết 1-3 (7:00 - 9:40)', -- Ca/Tiết học
+    'scheduled' -- Trạng thái
+);
+
+-- Lịch dạy 2 (Chiều): Dùng Phân công 2, tại Phòng 2
+INSERT INTO `schedules` (class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES (
+    102, -- ID của Phân công 2 (User 35 + Lớp 2)
+    102, -- ID của Phòng 2 (P.303)
+    '2025-10-21', -- Ngày hôm nay
+    'Tiết 7-9 (13:30 - 16:10)', -- Ca/Tiết học
+    'scheduled' -- Trạng thái
+);
