@@ -197,4 +197,146 @@ class UserController extends Controller
             'today_schedules' => $formattedSchedules,
         ]);
     }
+    public function getScheduleData(Request $request, User $user)
+    {
+        // 1. Lấy thông số tuần (0 = tuần này, -1 = tuần trước, 1 = tuần sau)
+        $weekOffset = (int)$request->query('week_offset', 0);
+        $today = Carbon::today();
+        
+        // Tính ngày bắt đầu của tuần (Thứ 2) dựa trên offset
+        $startOfWeek = $today->copy()->addWeeks($weekOffset)->startOfWeek(); 
+
+        // 2. Lấy dữ liệu cho tab "Hôm nay" (Tương tự getHomeSummary)
+        $todaySchedules = $this->getSchedulesForDates($user, [Carbon::today()]);
+        $todayData = [
+            'day_number' => $today->format('d'),
+            'full_date_string' => $this->formatFullDateString($today),
+            'schedules' => $this->formatSchedules($todaySchedules, Carbon::now()),
+        ];
+
+        // 3. Lấy dữ liệu cho tab "Tuần này"
+        
+        // 3.1. Tạo mảng 7 ngày trong tuần
+        $weekDates = [];
+        $dateCursor = $startOfWeek->copy();
+        $todayIndex = 0;
+
+        for ($i = 0; $i < 7; $i++) {
+            $weekDates[] = [
+                'day_name' => $this->formatDayName($dateCursor), // "T2", "T3"
+                'day_number' => $dateCursor->format('d'),
+                'full_date' => $dateCursor->toDateString(), // "2025-10-20"
+                'full_date_string' => $this->formatFullDateString($dateCursor), // "Thứ 2, Ngày 20/10/2025"
+            ];
+            
+            if ($dateCursor->isSameDay(Carbon::today())) {
+                $todayIndex = $i;
+            }
+            $dateCursor->addDay();
+        }
+
+        // 3.2. Lấy *TẤT CẢ* lịch dạy trong 7 ngày đó
+        $endOfWeek = $startOfWeek->copy()->addDays(6);
+        $allWeekSchedules = $this->getSchedulesForDates($user, [$startOfWeek, $endOfWeek]);
+
+        // 3.3. Nhóm lịch dạy theo ngày (Map<String, List<Schedule>>)
+        $schedulesByDate = [];
+        // Khởi tạo map với các mảng rỗng
+        foreach ($weekDates as $date) {
+            $schedulesByDate[$date['full_date']] = [];
+        }
+
+        // Phân loại lịch dạy vào đúng ngày
+        $formattedSchedulesMap = $allWeekSchedules->groupBy(function($schedule) {
+            return $schedule->date->toDateString();
+        });
+
+        foreach ($formattedSchedulesMap as $dateKey => $schedules) {
+            $schedulesByDate[$dateKey] = $this->formatSchedules($schedules, Carbon::now());
+        }
+
+        $weekData = [
+            'dates' => $weekDates,
+            'today_index' => $todayIndex,
+            'schedules_by_date' => $schedulesByDate,
+        ];
+
+        // 4. Trả về JSON hoàn chỉnh
+        return response()->json([
+            'today' => $todayData,
+            'week' => $weekData,
+        ]);
+    }
+
+
+    /**
+     * HÀM HỖ TRỢ 1: Query lịch dạy
+     * (Tách ra từ getHomeSummary để tái sử dụng)
+     */
+    private function getSchedulesForDates(User $user, array $dateRange)
+    {
+        $query = Schedule::whereHas('classCourseAssignment', function($q) use ($user) {
+                $q->where('teacher_id', $user->id); 
+            })
+            ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel']);
+
+        if (count($dateRange) == 1) {
+            $query->where('date', $dateRange[0]); // Lấy 1 ngày
+        } else {
+            $query->whereBetween('date', $dateRange); // Lấy khoảng (tuần)
+        }
+
+        return $query->orderBy('session', 'asc')->get();
+    }
+
+    /**
+     * HÀM HỖ TRỢ 2: Format lịch dạy
+     * (Tách ra từ getHomeSummary để tái sử dụng)
+     */
+    private function formatSchedules($schedules, Carbon $now)
+    {
+        return $schedules->map(function($schedule) use ($now) {
+            $location = $schedule->room?->location ?? 'N/A';
+            $roomName = $schedule->room?->name ?? 'N/A';
+            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+            
+            // ⚠️ LƯU Ý: Vẫn dùng status từ DB vì không có time_start/time_end
+            $status = $schedule->status; 
+
+            return [
+                'id' => $schedule->id,
+                'time' => $schedule->session, // 'time' là key frontend dùng
+                'lessons' => $schedule->session,
+                'title' => $courseName,
+                'course_code' => "({$classCode})", 
+                'location' => "{$roomName} - {$location}",
+                'status' => $status,
+            ];
+        });
+    }
+
+    /**
+     * HÀM HỖ TRỢ 3: Format tên Thứ
+     */
+    private function formatDayName(Carbon $date)
+    {
+        if ($date->isSunday()) return 'CN';
+        // 'N' trả về 1 (Thứ 2) -> 7 (Chủ Nhật)
+        return 'T' . ($date->dayOfWeek + 1); 
+    }
+
+    /**
+     * HÀM HỖ TRỢ 4: Format ngày đầy đủ
+     */
+    private function formatFullDateString(Carbon $date)
+    {
+        // ⛔️ THAY THẾ DÒNG CŨ:
+        // return $date->locale('vi')->formatPattern("'Thứ' EEEE, 'Ngày' dd/MM/yyyy");
+
+        // ✅ BẰNG DÒNG MỚI:
+        // 'l' = Tên thứ đầy đủ (ví dụ: "Thứ Ba")
+        // 'd/m/Y' = Ngày/Tháng/Năm
+        return $date->locale('vi')->translatedFormat('l, d/m/Y');
+    }
 }

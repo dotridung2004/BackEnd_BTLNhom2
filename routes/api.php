@@ -26,3 +26,4 @@ Route::apiResource('rooms', RoomController::class);
 Route::apiResource('schedules', ScheduleController::class);
 Route::post('login', [AuthController::class, 'login']);
 Route::get('/users/{user}/home-summary', [UserController::class, 'getHomeSummary']);
+Route::get('/users/{user}/schedule-data', [UserController::class, 'getScheduleData']);
