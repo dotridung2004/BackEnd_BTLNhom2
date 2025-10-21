@@ -20,4 +20,10 @@ class ClassCourseAssignment extends Model
     public function schedules(){
         return $this->hasMany(Schedule::class);
     }
+    public function classModel()
+    {
+        // 'class_id' trỏ đến bảng 'classes', 
+        // ⚠️ Đảm bảo bạn có Model 'ClassModel' (hoặc tên tương tự)
+        return $this->belongsTo(ClassModel::class, 'class_id'); 
+    }
 }

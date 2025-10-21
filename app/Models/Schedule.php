@@ -15,7 +15,7 @@ class Schedule extends Model
         'status',
     ];
     public function classCourseAssignment(){
-        return $this->belongsTo(Course::class);
+        return $this->belongsTo(ClassCourseAssignment::class, 'class_course_assignment_id');
     }
     public function room(){
         return $this->belongsTo(Room::class);

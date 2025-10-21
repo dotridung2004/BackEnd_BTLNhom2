@@ -25,3 +25,4 @@ Route::apiResource('makeupclasses', MakeupClassController::class);
 Route::apiResource('rooms', RoomController::class);
 Route::apiResource('schedules', ScheduleController::class);
 Route::post('login', [AuthController::class, 'login']);
+Route::get('/users/{user}/home-summary', [UserController::class, 'getHomeSummary']);
