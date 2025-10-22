@@ -1069,7 +1069,7 @@ VALUES (
     'scheduled' -- Trạng thái
 );
 
-
+-----------------------------------------------------------------------
 -- Thêm môn học (ví dụ ID = 201)
 INSERT INTO courses (id, name, code, credits)
 VALUES (201, 'Lập trình Web Nâng cao', 'CSE480', 3);
@@ -1106,3 +1106,192 @@ VALUES (
     'Tiết 4-6',     -- Buổi học khác
     'scheduled'
 );
+
+------------------------------------------------------------------
+-- 1. TẠO PHÂN CÔNG GIẢNG DẠY (NẾU CHƯA CÓ)
+-- Liên kết Giáo viên 35 với Lớp 101 và Môn 101
+INSERT INTO `class_course_assignments` (id, class_id, course_id, teacher_id) 
+VALUES (301, 101, 101, 35)
+ON DUPLICATE KEY UPDATE id=id; -- Bỏ qua nếu đã tồn tại
+
+
+-- 2. TẠO 3 LỊCH DẠY GỐC (2 LỊCH QUÁ KHỨ, 1 LỊCH TƯƠNG LAI)
+-- Lịch 1: Đã diễn ra tuần trước (sẽ dùng để tạo đơn "cần bù")
+INSERT INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES (401, 301, 101, '2025-10-14', 'Tiết 1-3 (Quá khứ)', 'scheduled');
+
+-- Lịch 2: Đã diễn ra tuần trước (sẽ dùng để tạo đơn "đã bù xong")
+INSERT INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES (402, 301, 101, '2025-10-15', 'Tiết 1-3 (Quá khứ)', 'scheduled');
+
+-- Lịch 3: Sắp diễn ra (sẽ dùng để tạo đơn "chờ duyệt")
+INSERT INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES (403, 301, 101, '2025-10-24', 'Tiết 7-9 (Tương lai)', 'scheduled');
+
+-- Lịch 4: Sắp diễn ra (sẽ dùng để ĐĂNG KÝ NGHỈ MỚI)
+INSERT INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES (404, 301, 101, '2025-10-25', 'Tiết 1-3 (Tương lai 2)', 'scheduled');
+
+-- Lịch 5: Lịch dạy bù (để liên kết với đơn "đã bù xong")
+INSERT INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES (405, 301, 101, '2025-10-27', 'Tiết 1-3 (Dạy bù)', 'makeup');
+
+
+-- 3. TẠO 3 ĐƠN XIN NGHỈ (LEAVE REQUESTS)
+-- Đơn 1: Đã được duyệt (cho Lịch 401). Sẽ hiển thị trong "Buổi cần bù".
+INSERT INTO `leave_requests` (id, teacher_id, schedule_id, reason, `status`, approved_by)
+VALUES (501, 35, 401, 'Nghỉ ốm (Cần bù)', 'approved', 1); -- Giả sử admin ID=1 duyệt
+
+-- Đơn 2: Đã được duyệt (cho Lịch 402). Sẽ *không* hiển thị trong "Buổi cần bù" vì đã có lịch bù.
+INSERT INTO `leave_requests` (id, teacher_id, schedule_id, reason, `status`, approved_by)
+VALUES (502, 35, 402, 'Nghỉ công tác (Đã bù)', 'approved', 1);
+
+-- Đơn 3: Đang chờ duyệt (cho Lịch 403). Sẽ hiển thị trong "Lịch sử nghỉ".
+INSERT INTO `leave_requests` (id, teacher_id, schedule_id, reason, `status`)
+VALUES (503, 35, 403, 'Xin nghỉ (Chờ duyệt)', 'pending');
+
+
+-- 4. TẠO 1 LỚP DẠY BÙ (MAKEUP CLASS)
+-- Liên kết Đơn nghỉ 502 với Lịch bù 405
+INSERT INTO `makeup_classes` (id, teacher_id, original_schedule_id, new_schedule_id, `status`)
+VALUES (601, 35, 402, 405, 'approved'); -- Giả sử đã được duyệt
+
+------------------------------------------------------------
+-- 1. TẠO 3 SINH VIÊN MẪU (VỚI role = 'student')
+-- (Dùng INSERT IGNORE để bỏ qua nếu ID đã tồn tại)
+INSERT IGNORE INTO `users` (id, name, first_name, last_name, email, password, role, status, phone_number) 
+VALUES 
+(1001, 'Nguyễn Văn A', 'Nguyễn', 'Văn A', 'sv.a@example.com', '$2y$12$sKBMthjkygnEqfvEuJ/ATuwE5mTxqDhUGyemkI1hC7PB0M7QWUrLK', 'student', 'active', '0901112221'),
+(1002, 'Trần Thị B', 'Trần', 'Thị B', 'sv.b@example.com', '$2y$12$sKBMthjkygnEqfvEuJ/ATuwE5mTxqDhUGyemkI1hC7PB0M7QWUrLK', 'student', 'active', '0901112222'),
+(1003, 'Lê Văn C', 'Lê', 'Văn C', 'sv.c@example.com', '$2y$12$sKBMthjkygnEqfvEuJ/ATuwE5mTxqDhUGyemkI1hC7PB0M7QWUrLK', 'student', 'active', '0901112223');
+
+-- 2. TẠO 2 MÔN HỌC VÀ 2 LỚP HỌC MỚI
+INSERT IGNORE INTO `courses` (id, name, code) 
+VALUES 
+(301, 'An toàn thông tin', 'IT450'),
+(302, 'Mạng máy tính', 'IT320');
+
+INSERT IGNORE INTO `classes` (id, name, semester, academic_year) 
+VALUES 
+(401, 'Lớp 65D-ATTT1', 'HK1', '2025-2026'),
+(402, 'Lớp 65D-MMT1', 'HK1', '2025-2026');
+
+-- 3. PHÂN CÔNG GIÁO VIÊN (ID=35) DẠY 2 LỚP ĐÓ
+INSERT IGNORE INTO `class_course_assignments` (id, class_id, course_id, teacher_id) 
+VALUES 
+(501, 401, 301, 35), -- GV 35 dạy Lớp 401 (ATTT)
+(502, 402, 302, 35); -- GV 35 dạy Lớp 402 (MMT)
+
+-- 4. TẠO 2 LỊCH DẠY CHO HÔM NAY (2025-10-22)
+-- (Giả sử phòng 101, 102 đã tồn tại)
+INSERT IGNORE INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES 
+(601, 501, 101, '2025-10-22', 'Tiết 1-3 (Lớp ATTT)', 'scheduled'), -- Lịch 1 (Lớp 401)
+(602, 502, 102, '2025-10-22', 'Tiết 7-9 (Lớp MMT)', 'scheduled'); -- Lịch 2 (Lớp 402)
+
+-- 5. GÁN SINH VIÊN VÀO LỚP HỌC
+-- Gán 3 sinh viên (1001, 1002, 1003) vào Lớp 401 (Lớp ATTT)
+-- (Đảm bảo tên bảng trung gian là 'class_student' và tên cột là 'class_model_id', 'student_id')
+INSERT IGNORE INTO `class_student` (class_model_id, student_id) 
+VALUES 
+(401, 1001),
+(401, 1002),
+(401, 1003);
+
+-- 6. TẠO DỮ LIỆU ĐIỂM DANH CÓ SẴN (CHO LỊCH 601)
+-- (Bảng `attendances` không có cột `date`, chỉ cần `schedule_id`)
+INSERT IGNORE INTO `attendances` (schedule_id, student_id, `status`) 
+VALUES 
+(601, 1001, 'absent'),  -- SV A vắng
+(601, 1002, 'late');    -- SV B đi muộn
+-- (SV C (1003) không có trong bảng, sẽ được mặc định là 'present' khi tải)
+
+------------------------------------------------------------------------------
+
+-- SỬ DỤNG INSERT IGNORE ĐỂ BỎ QUA NẾU KHÓA CHÍNH (ID) ĐÃ TỒN TẠI
+-- (Xóa dữ liệu cũ trong các bảng này nếu bạn muốn làm sạch)
+
+-- 1. TẠO CÁC THỰC THỂ CỐ ĐỊNH (PHÒNG HỌC, KHOA)
+INSERT IGNORE INTO `departments` (id, name, head_id) 
+VALUES
+(1, 'Công nghệ thông tin', 35);
+
+INSERT IGNORE INTO `rooms` (id, name, capacity, location) 
+VALUES
+(101, 'Phòng 201-A1', 60, 'Tòa A1, Tầng 2'),
+(102, 'Phòng 303-B2', 80, 'Tòa B2, Tầng 3');
+
+-- 2. TẠO CÁC MÔN HỌC VÀ LỚP HỌC
+INSERT IGNORE INTO `courses` (id, name, code, credits, department_id) 
+VALUES
+(201, 'Phát triển ứng dụng di động', 'CSE441', 3, 1),
+(202, 'Mạng máy tính', 'IT320', 3, 1);
+
+INSERT IGNORE INTO `classes` (id, name, semester, academic_year, department_id) 
+VALUES
+(301, 'Lớp 65CNTT-1', 'HK1', '2025-2026', 1),
+(302, 'Lớp 65CNTT-2', 'HK1', '2025-2026', 1);
+
+-- 3. TẠO SINH VIÊN (role = 'student')
+INSERT IGNORE INTO `users` (id, name, first_name, last_name, email, password, role, status, phone_number) 
+VALUES 
+(1001, 'Nguyễn Văn A', 'Nguyễn', 'Văn A', 'sv.a@example.com', '$2y$12$sKBMthjkygnEqfvEuJ/ATuwE5mTxqDhUGyemkI1hC7PB0M7QWUrLK', 'student', 'active', '0901112221'),
+(1002, 'Trần Thị B', 'Trần', 'Thị B', 'sv.b@example.com', '$2y$12$sKBMthjkygnEqfvEuJ/ATuwE5mTxqDhUGyemkI1hC7PB0M7QWUrLK', 'student', 'active', '0901112222'),
+(1003, 'Lê Văn C', 'Lê', 'Văn C', 'sv.c@example.com', '$2y$12$sKBMthjkygnEqfvEuJ/ATuwE5mTxqDhUGyemkI1hC7PB0M7QWUrLK', 'student', 'active', '0901112223');
+
+-- 4. PHÂN CÔNG GIẢNG DẠY (Liên kết Giáo viên 35)
+INSERT IGNORE INTO `class_course_assignments` (id, class_id, course_id, teacher_id) 
+VALUES 
+(401, 301, 201, 35), -- GV 35 dạy Lớp 301 (CNTT-1) môn 201 (App DD)
+(402, 302, 202, 35); -- GV 35 dạy Lớp 302 (CNTT-2) môn 202 (Mạng MT)
+
+-- 5. GÁN SINH VIÊN VÀO LỚP (Dùng cho Điểm danh)
+-- (Đảm bảo tên bảng là 'class_student' và tên cột là 'class_model_id')
+INSERT IGNORE INTO `class_student` (class_model_id, student_id) 
+VALUES 
+(301, 1001), -- SV A vào Lớp 301
+(301, 1002), -- SV B vào Lớp 301
+(301, 1003); -- SV C vào Lớp 301
+
+-- 6. TẠO LỊCH DẠY (Schedules) - QUAN TRỌNG
+-- (Giả sử "Hôm nay" là 2025-10-22)
+INSERT IGNORE INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES 
+-- Lịch 1 (Hôm nay) - Dùng cho Trang chủ, Lịch dạy, Điểm danh
+(501, 401, 101, '2025-10-22', 'Tiết 1-3 (Lớp 65CNTT-1)', 'scheduled'), 
+-- Lịch 2 (Hôm nay) - Dùng cho Trang chủ, Lịch dạy, Điểm danh
+(502, 402, 102, '2025-10-22', 'Tiết 7-9 (Lớp 65CNTT-2)', 'scheduled'),
+-- Lịch 3 (Quá khứ) - Dùng cho Nghỉ/Bù (Cần bù)
+(503, 401, 101, '2025-10-15', 'Tiết 1-3 (Đã nghỉ, Cần bù)', 'cancelled'), 
+-- Lịch 4 (Quá khứ) - Dùng cho Nghỉ/Bù (Đã bù)
+(504, 401, 101, '2025-10-16', 'Tiết 1-3 (Đã nghỉ, Đã bù)', 'cancelled'),
+-- Lịch 5 (Tương lai) - Dùng cho Lịch sử nghỉ (Chờ duyệt)
+(505, 402, 102, '2025-10-25', 'Tiết 7-9 (Sắp tới)', 'scheduled'),
+-- Lịch 6 (Tương lai) - Dùng để ĐĂNG KÝ NGHỈ MỚI
+(506, 401, 101, '2025-10-26', 'Tiết 1-3 (Sắp tới 2)', 'scheduled'),
+-- Lịch 7 (Tương lai) - LỊCH DẠY BÙ (Liên kết với Lịch 504)
+(507, 401, 102, '2025-10-28', 'Tiết 1-3 (Lịch bù)', 'makeup');
+
+-- 7. TẠO DỮ LIỆU ĐIỂM DANH (Cho Lịch 501)
+INSERT IGNORE INTO `attendances` (schedule_id, student_id, `status`) 
+VALUES 
+(501, 1001, 'absent'),  -- SV A vắng
+(501, 1002, 'late');    -- SV B đi muộn
+-- (SV 1003 không có ở đây, sẽ được mặc định là 'present' khi tải)
+
+-- 8. TẠO DỮ LIỆU NGHỈ/BÙ
+-- Đơn 1: Đã duyệt (Cho Lịch 503) -> Sẽ hiển thị trong "Buổi cần bù"
+INSERT IGNORE INTO `leave_requests` (id, teacher_id, schedule_id, reason, `status`, approved_by, created_at)
+VALUES (601, 35, 503, 'Nghỉ ốm (Cần bù)', 'approved', 1, '2025-10-14 08:00:00'); -- Giả sử admin ID=1 duyệt
+
+-- Đơn 2: Đã duyệt (Cho Lịch 504) -> Sẽ KHÔNG hiển thị trong "Buổi cần bù"
+INSERT IGNORE INTO `leave_requests` (id, teacher_id, schedule_id, reason, `status`, approved_by, created_at)
+VALUES (602, 35, 504, 'Nghỉ công tác (Đã bù)', 'approved', 1, '2025-10-15 08:00:00');
+
+-- Đơn 3: Chờ duyệt (Cho Lịch 505) -> Sẽ hiển thị trong "Lịch sử nghỉ"
+INSERT IGNORE INTO `leave_requests` (id, teacher_id, schedule_id, reason, `status`, created_at)
+VALUES (603, 35, 505, 'Xin nghỉ (Chờ duyệt)', 'pending', '2025-10-20 08:00:00');
+
+-- Lớp bù: Liên kết Đơn 602 (Lịch 504) với Lịch bù (507)
+INSERT IGNORE INTO `makeup_classes` (id, teacher_id, original_schedule_id, new_schedule_id, `status`)
+VALUES (701, 35, 504, 507, 'approved');

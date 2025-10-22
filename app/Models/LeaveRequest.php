@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\MakeupClass;
 class LeaveRequest extends Model
 {
     protected $fillable = [
@@ -22,5 +22,10 @@ class LeaveRequest extends Model
     }
     public function approver(){
         return $this->belongsTo(User::class,'approved_by');
+    }
+    public function makeupClass()
+    {
+        // hasOne(ModelLienQuan, 'khoa_ngoai_tren_bang_lien_quan', 'khoa_cuc_bo_tren_bang_nay')
+        return $this->hasOne(MakeupClass::class, 'original_schedule_id', 'schedule_id');
     }
 }

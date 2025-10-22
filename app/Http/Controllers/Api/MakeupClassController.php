@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+
+// 👇 *** THÊM CÁC DÒNG NÀY ***
 use App\Models\Schedule;
 use App\Models\MakeupClass;
+use Illuminate\Support\Facades\Auth; // Để lấy user đã đăng nhập
+use Illuminate\Validation\Rule; // (Có thể cần nếu validate phức tạp hơn)
+
 class MakeupClassController extends Controller
 {
     /**
@@ -18,12 +23,13 @@ class MakeupClassController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * --- ĐÃ SỬA LỖI ---
      */
-    // Ghi đè hoặc tạo hàm store
     public function store(Request $request)
     {
+        // 1. Validate dữ liệu
         $validated = $request->validate([
-            'teacher_id' => 'required|exists:users,id', // Nên lấy từ user đã xác thực
+            // 'teacher_id' SẼ ĐƯỢC LẤY TỪ AUTH::ID() NÊN KHÔNG CẦN VALIDATE TỪ BODY
             'original_schedule_id' => 'required|exists:schedules,id',
             'new_schedule_date' => 'required|date_format:Y-m-d', // Ngày bù
             'new_session' => 'required|string', // Ca/tiết bù
@@ -31,35 +37,40 @@ class MakeupClassController extends Controller
             'note' => 'nullable|string|max:500', // Ghi chú thêm
         ]);
 
+        // Lấy teacher_id từ người dùng đã xác thực (AN TOÀN HƠN)
+        $teacherId = Auth::id();
+        if (!$teacherId) {
+             return response()->json(['message' => 'Lỗi xác thực người dùng.'], 401);
+        }
+
         // --- Logic tạo lịch dạy mới (bản nháp) ---
-        // Lấy thông tin từ lịch dạy gốc
+        // 2. Lấy thông tin từ lịch dạy gốc
         $originalSchedule = Schedule::findOrFail($validated['original_schedule_id']);
         $assignmentId = $originalSchedule->class_course_assignment_id;
 
-        // Tạo một bản ghi Schedule mới cho buổi dạy bù
+        // 3. Tạo một bản ghi Schedule mới cho buổi dạy bù
         $newSchedule = Schedule::create([
             'class_course_assignment_id' => $assignmentId,
             'room_id' => $validated['new_room_id'],
             'date' => $validated['new_schedule_date'],
             'session' => $validated['new_session'],
             'topic' => 'Dạy bù cho ngày ' . $originalSchedule->date->format('d/m/Y'), // Ví dụ topic
-            'status' => 'makeup', // Đánh dấu là lịch dạy bù
+            'status' => 'makeup', // Đánh dấu là lịch dạy bù (hoặc pending_makeup)
         ]);
-        // --- Kết thúc Logic tạo lịch dạy mới ---
 
-        // Tạo bản ghi MakeupClass để liên kết
+        // 4. Tạo bản ghi MakeupClass để liên kết
         $makeupClass = MakeupClass::create([
-            'teacher_id' => $validated['teacher_id'], // Thay bằng Auth::id()
+            'teacher_id' => $teacherId, // 👈 *** SỬA: Dùng $teacherId từ Auth ***
             'original_schedule_id' => $validated['original_schedule_id'],
             'new_schedule_id' => $newSchedule->id, // Liên kết đến lịch bù vừa tạo
             'status' => 'pending', // Trạng thái chờ duyệt
-            // Lưu ghi chú vào bảng schedules hoặc makeup_classes tùy thiết kế
-            // 'note' => $validated['note']
+            // 'note' => $validated['note'] // Bạn có thể lưu note ở đây nếu bảng makeup_classes có cột 'note'
         ]);
 
-        // Cập nhật trạng thái lịch dạy gốc thành 'cancelled' hoặc 'makeup_pending'?
-        // $originalSchedule->update(['status' => 'cancelled']); // Cân nhắc kỹ logic này
+        // 5. (Tùy chọn) Cập nhật trạng thái lịch dạy gốc
+        // $originalSchedule->update(['status' => 'cancelled']); // Cân nhắc kỹ
 
+        // 6. Trả về thành công
         return response()->json(['message' => 'Gửi yêu cầu dạy bù thành công!', 'data' => $makeupClass], 201);
     }
 
