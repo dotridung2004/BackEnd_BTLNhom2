@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Schedule;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth; // 👈 *** THÊM DÒNG NÀY ***
-
+use App\Models\User; // 👈 Thêm
+use App\Models\Schedule; // 👈 Thêm
+use Carbon\Carbon; //
 class ScheduleController extends Controller
 {
     /**
@@ -50,58 +48,56 @@ class ScheduleController extends Controller
     {
         //
     }
-
-    // --- API CHO ĐIỂM DANH (DROPDOWN) ---
-    
     public function getSchedulesByDateForTeacher(Request $request, User $user)
     {
+        // Validate ngày gửi lên
         $request->validate(['date' => 'required|date_format:Y-m-d']);
         $date = Carbon::parse($request->query('date'));
-        
-        // (Sửa lỗi bảo mật: Dùng Auth::id() thay vì $user->id)
-        $teacherId = Auth::id() ?? $user->id;
 
+        // Lấy lịch dạy của giáo viên trong ngày đó
         $schedules = Schedule::where('date', $date)
-            ->whereHas('classCourseAssignment', function($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId); // 👈 Sửa
+            ->whereHas('classCourseAssignment', function($q) use ($user) {
+                $q->where('teacher_id', $user->id);
             })
+            // Load các thông tin cần thiết để hiển thị tên
             ->with(['classCourseAssignment.course', 'classCourseAssignment.classModel'])
-            ->orderBy('session', 'asc')
+            ->orderBy('session', 'asc') // Sắp xếp theo tiết học
             ->get();
 
+        // Format lại dữ liệu cho dropdown ở Flutter
         $formatted = $schedules->map(function($schedule) {
+            // Lấy tên môn học và tên lớp (giả sử cột 'name' trong bảng classes là mã lớp/tên lớp)
             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
             return [
-                'schedule_id' => $schedule->id,
+                'schedule_id' => $schedule->id, // ID của lịch dạy
+                // Kết hợp thông tin để hiển thị (Tên môn (Mã lớp) - Tiết học)
                 'display_name' => "{$courseName} ({$classCode}) - {$schedule->session}"
             ];
         });
 
         return response()->json($formatted);
     }
-    
-    // --- API CHO ĐĂNG KÝ NGHỈ (DROPDOWN) ---
-
     public function getAvailableSchedulesForLeave(User $user)
     {
-        // (Sửa lỗi bảo mật: Dùng Auth::id() thay vì $user->id)
-        $teacherId = Auth::id() ?? $user->id;
-
+        // Lấy lịch dạy sắp tới (ví dụ: từ ngày mai trở đi)
+        // và chưa bị hủy hoặc chưa có đơn xin nghỉ pending/approved
         $upcomingSchedules = Schedule::where('date', '>=', Carbon::tomorrow())
-            ->where('status', 'scheduled')
-            ->whereHas('classCourseAssignment', function($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId); // 👈 Sửa
+            ->where('status', 'scheduled') // Chỉ lấy lịch chưa dạy/hủy
+            ->whereHas('classCourseAssignment', function($q) use ($user) {
+                $q->where('teacher_id', $user->id);
             })
+            // Loại trừ những lịch đã có đơn xin nghỉ đang chờ hoặc đã duyệt
             ->whereDoesntHave('leaveRequests', function ($query) {
                 $query->whereIn('status', ['pending', 'approved']);
             })
-            ->with(['classCourseAssignment.course', 'classCourseAssignment.classModel'])
+            ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel'])
             ->orderBy('date', 'asc')
             ->orderBy('session', 'asc')
-            ->limit(50)
+            ->limit(50) // Giới hạn số lượng trả về
             ->get();
 
+        // Format tương tự getSchedulesByDateForTeacher nhưng thêm ngày
         $formatted = $upcomingSchedules->map(function($schedule) {
             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';

@@ -49,3 +49,4 @@ Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
 // Gửi yêu cầu đăng ký dạy bù (Ghi đè route mặc định nếu cần)
 Route::post('/makeup-classes', [MakeupClassController::class, 'store']);
 Route::get('/students/{user}/home-summary', [UserController::class, 'getStudentHomeSummary']);
+Route::get('/students/{user}/schedule/week', [UserController::class, 'getStudentWeeklySchedule']);

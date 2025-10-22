@@ -477,4 +477,68 @@ class UserController extends Controller
     {
         return $date->locale('vi')->translatedFormat('l, d/m/Y');
     }
+
+    public function getStudentWeeklySchedule(User $user)
+    {
+        if ($user->role !== 'student') {
+            return response()->json(['message' => 'Tài khoản không phải là sinh viên'], 403);
+        }
+        
+        // (Thêm kiểm tra bảo mật: chỉ cho phép sinh viên tự xem)
+        if (Auth::id() != $user->id) {
+             return response()->json(['message' => 'Không có quyền truy cập'], 403);
+        }
+
+        // 1. Xác định ngày trong tuần
+        $today = Carbon::today();
+        $startOfWeek = $today->copy()->startOfWeek(); // Bắt đầu từ Thứ 2
+        $endOfWeek = $today->copy()->endOfWeek();     // Kết thúc vào Chủ Nhật
+
+        // 2. Lấy ID các lớp sinh viên này học
+        $studentClassIds = DB::table('class_student')
+                            ->where('student_id', $user->id)
+                            ->pluck('class_model_id');
+        
+        $assignmentIds = DB::table('class_course_assignments')
+                            ->whereIn('class_id', $studentClassIds)
+                            ->pluck('id');
+
+        // 3. Truy vấn tất cả lịch học trong tuần
+        $allWeekSchedules = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
+            ->whereIn('class_course_assignment_id', $assignmentIds)
+            ->with([
+                'room', 
+                'classCourseAssignment.course',
+                'classCourseAssignment.classModel',
+                'classCourseAssignment.teacher'
+            ])
+            ->orderBy('date', 'asc')      // Sắp xếp theo ngày
+            ->orderBy('session', 'asc')   // Rồi sắp xếp theo tiết
+            ->get();
+
+        // 4. Định dạng lại dữ liệu (Quan trọng: phải có 'schedule_date')
+        $formattedSchedules = $allWeekSchedules->map(function($schedule) {
+            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+            $teacherName = $schedule->classCourseAssignment?->teacher?->name ?? 'N/A';
+            $location = $schedule->room?->name ?? 'N/A';
+            $status = 'Sắp diễn ra'; // (Placeholder)
+
+            return [
+                'id' => $schedule->id,
+                'time_range' => $schedule->session, 
+                'lessons' => $schedule->session,
+                'title' => $courseName,
+                'course_code' => $classCode,
+                'location' => $location,
+                'status' => $status,
+                'teacher_name' => $teacherName,
+                // 👇 *** Rất quan trọng: Thêm trường này cho Flutter ***
+                'schedule_date' => $schedule->date->toIso8601String(), 
+            ];
+        });
+
+        // 5. Trả về một danh sách (List)
+        return response()->json($formattedSchedules);
+    }
 }
