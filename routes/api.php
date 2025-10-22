@@ -34,3 +34,4 @@ Route::get('/schedules/{schedule}/students-attendance', [AttendanceController::c
 Route::post('/attendances/bulk-save', [AttendanceController::class, 'saveBulkAttendance']);
 Route::get('/users/{user}/schedules-by-date', [ScheduleController::class, 'getSchedulesByDateForTeacher']);
 Route::get('/users/{user}/leave-makeup-summary', [UserController::class, 'getLeaveMakeupSummary']);
+Route::get('/users/{user}/pending-makeup', [UserController::class, 'getPendingMakeupSchedules']); // Hoặc controller riêng
