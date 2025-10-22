@@ -423,4 +423,63 @@ class UserController extends Controller
                  return $formattedSchedule;
             });
     }
+    public function getLeaveMakeupSummary(User $user)
+    {
+        // Đếm số buổi đã nghỉ (đơn xin nghỉ được duyệt)
+        $approvedLeaveCount = LeaveRequest::where('teacher_id', $user->id)
+                                        ->where('status', 'approved')
+                                        ->count();
+
+        // Đếm số buổi cần bù (nghỉ được duyệt NHƯNG chưa có trong makeup_classes hoặc makeup bị từ chối)
+        $pendingMakeupCount = LeaveRequest::where('teacher_id', $user->id)
+                                        ->where('status', 'approved')
+                                        ->whereDoesntHave('makeupClass', function ($query) {
+                                            // Chỉ tính những đơn nghỉ chưa có lớp bù (hoặc lớp bù bị từ chối)
+                                            $query->whereIn('status', ['pending', 'approved', 'done']);
+                                        })
+                                        ->count();
+
+        return response()->json([
+            'leave_count' => $approvedLeaveCount,
+            'pending_makeup_count' => $pendingMakeupCount,
+        ]);
+    }
+
+    public function getPendingMakeupSchedules(User $user)
+    {
+        // Lấy các đơn nghỉ được duyệt mà chưa có lớp bù tương ứng
+        $pendingLeaves = LeaveRequest::where('teacher_id', $user->id)
+                                    ->where('status', 'approved')
+                                    ->whereDoesntHave('makeupClass', function ($query) {
+                                        $query->whereIn('status', ['pending', 'approved', 'done']);
+                                    })
+                                    // Load thông tin lịch dạy gốc để hiển thị
+                                    ->with(['schedule.room', 'schedule.classCourseAssignment.course', 'schedule.classCourseAssignment.classModel'])
+                                    ->get();
+
+        // Format lại dữ liệu giống ScheduleCard/ScheduleDetailItem
+        $formatted = $pendingLeaves->map(function($leaveRequest) {
+            $schedule = $leaveRequest->schedule;
+            if (!$schedule) return null; // Bỏ qua nếu lịch dạy gốc không tồn tại
+
+            $location = $schedule->room?->location ?? 'N/A';
+            $roomName = $schedule->room?->name ?? 'N/A';
+            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+
+            return [
+                'leave_request_id' => $leaveRequest->id, // ID của đơn xin nghỉ
+                'schedule_id' => $schedule->id,         // ID của lịch dạy gốc
+                'date_string' => $schedule->date->format('d/m/Y'), // Thêm ngày nghỉ
+                'time_range' => $schedule->session,
+                'lesson_period' => $schedule->session,
+                'subject_name' => $courseName,
+                'course_code' => "({$classCode})",
+                'location' => "{$roomName} - {$location}",
+                // Thêm các thông tin khác nếu cần
+            ];
+        })->whereNotNull(); // Loại bỏ các kết quả null
+
+        return response()->json($formatted->values()); // Trả về mảng JSON
+    }
 }

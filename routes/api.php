@@ -36,8 +36,6 @@ Route::get('/users/{user}/schedules-by-date', [ScheduleController::class, 'getSc
 Route::get('/users/{user}/leave-makeup-summary', [UserController::class, 'getLeaveMakeupSummary']);
 Route::get('/users/{user}/pending-makeup', [UserController::class, 'getPendingMakeupSchedules']); // Hoặc controller riêng
 Route::get('/users/{user}/leave-history', [LeaveRequestController::class, 'getLeaveHistoryForTeacher']);
-// Lấy lịch sử nghỉ (đã duyệt)
-Route::get('/users/{user}/leave-history', [LeaveRequestController::class, 'getLeaveHistoryForTeacher']);
 
 // Lấy lịch dạy sắp tới (để chọn khi đăng ký nghỉ)
 Route::get('/users/{user}/available-schedules-for-leave', [ScheduleController::class, 'getAvailableSchedulesForLeave']);
