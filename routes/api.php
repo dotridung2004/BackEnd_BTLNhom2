@@ -36,3 +36,17 @@ Route::get('/users/{user}/schedules-by-date', [ScheduleController::class, 'getSc
 Route::get('/users/{user}/leave-makeup-summary', [UserController::class, 'getLeaveMakeupSummary']);
 Route::get('/users/{user}/pending-makeup', [UserController::class, 'getPendingMakeupSchedules']); // Hoặc controller riêng
 Route::get('/users/{user}/leave-history', [LeaveRequestController::class, 'getLeaveHistoryForTeacher']);
+// Lấy lịch sử nghỉ (đã duyệt)
+Route::get('/users/{user}/leave-history', [LeaveRequestController::class, 'getLeaveHistoryForTeacher']);
+
+// Lấy lịch dạy sắp tới (để chọn khi đăng ký nghỉ)
+Route::get('/users/{user}/available-schedules-for-leave', [ScheduleController::class, 'getAvailableSchedulesForLeave']);
+
+// Gửi yêu cầu đăng ký nghỉ (Ghi đè route mặc định của apiResource nếu cần logic phức tạp)
+Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
+
+// Lấy phòng/ca trống (Ví dụ, cần logic phức tạp)
+// Route::get('/available-rooms-slots', [RoomController::class, 'getAvailableSlots']);
+
+// Gửi yêu cầu đăng ký dạy bù (Ghi đè route mặc định nếu cần)
+Route::post('/makeup-classes', [MakeupClassController::class, 'store']);
