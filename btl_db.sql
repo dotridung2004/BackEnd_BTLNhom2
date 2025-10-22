@@ -1295,3 +1295,71 @@ VALUES (603, 35, 505, 'Xin nghỉ (Chờ duyệt)', 'pending', '2025-10-20 08:00
 -- Lớp bù: Liên kết Đơn 602 (Lịch 504) với Lịch bù (507)
 INSERT IGNORE INTO `makeup_classes` (id, teacher_id, original_schedule_id, new_schedule_id, `status`)
 VALUES (701, 35, 504, 507, 'approved');
+
+
+-- SỬ DỤNG INSERT IGNORE ĐỂ BỎ QUA NẾU KHÓA CHÍNH (ID) ĐÃ TỒN TẠI
+
+-- 1. TẠO TÀI KHOẢN SINH VIÊN (ID 2001)
+-- (Mật khẩu là 'password' - đã được hash)
+INSERT IGNORE INTO `users` (id, name, first_name, last_name, email, password, role, status, phone_number) 
+VALUES 
+(2001, 'Nguyễn Sinh Viên A', 'Nguyễn', 'Sinh Viên A', 'student@example.com', '$2y$12$sKBMthjkygnEqfvEuJ/ATuwE5mTxqDhUGyemkI1hC7PB0M7QWUrLK', 'student', 'active', '0909090909');
+
+-- 2. TẠO MÔN HỌC (ID 401) VÀ LỚP HỌC (ID 501) MỚI
+INSERT IGNORE INTO `courses` (id, name, code, credits, department_id) 
+VALUES (401, 'Nhập môn Lập trình', 'IT101', 3, 1);
+
+INSERT IGNORE INTO `classes` (id, name, semester, academic_year, department_id) 
+VALUES (501, 'Lớp 67IT1', 'HK1', '2025-2026', 1);
+
+-- 3. PHÂN CÔNG GIÁO VIÊN (ID 35) DẠY LỚP NÀY
+INSERT IGNORE INTO `class_course_assignments` (id, class_id, course_id, teacher_id) 
+VALUES (601, 501, 401, 35); -- GV 35 dạy Lớp 501 môn 401
+
+-- 4. GHI DANH SINH VIÊN (ID 2001) VÀO LỚP (ID 501)
+-- (Đây là bước quan trọng nhất cho API của sinh viên)
+INSERT IGNORE INTO `class_student` (class_model_id, student_id) 
+VALUES 
+(501, 2001); -- Gán SV 2001 vào Lớp 501
+
+-- 5. TẠO LỊCH HỌC CHO LỚP NÀY VÀO HÔM NAY (2025-10-22)
+-- (Giả sử phòng 101, 102 đã tồn tại)
+INSERT IGNORE INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES 
+(701, 601, 101, '2025-10-22', 'Tiết 1-3 (Nhập môn LT)', 'scheduled'),
+(702, 601, 101, '2025-10-22', 'Tiết 4-6 (Nhập môn LT)', 'scheduled');
+
+-- 6. TẠO LỊCH SỬ ĐIỂM DANH (ĐỂ TEST TÓM TẮT CHUYÊN CẦN)
+-- (Tạo 2 lịch học trong quá khứ)
+INSERT IGNORE INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES 
+(703, 601, 101, '2025-10-15', 'Tiết 1-3 (Quá khứ 1)', 'taught'),
+(704, 601, 101, '2025-10-16', 'Tiết 1-3 (Quá khứ 2)', 'taught');
+
+-- (Tạo 2 bản ghi điểm danh cho sinh viên 2001)
+INSERT IGNORE INTO `attendances` (schedule_id, student_id, `status`) 
+VALUES 
+(703, 2001, 'present'),  -- Lịch 703: Có mặt
+(704, 2001, 'absent');   -- Lịch 704: Vắng
+
+-- 1. TẠO MÔN HỌC VÀ LỚP HỌC (NẾU CHƯA CÓ)
+INSERT IGNORE INTO `courses` (id, name, code, credits, department_id) 
+VALUES (401, 'Nhập môn Lập trình', 'IT101', 3, 1);
+
+INSERT IGNORE INTO `classes` (id, name, semester, academic_year, department_id) 
+VALUES (501, 'Lớp 67IT1', 'HK1', '2025-2026', 1);
+
+-- 2. PHÂN CÔNG GIÁO VIÊN (ID=35) DẠY LỚP NÀY (NẾU CHƯA CÓ)
+INSERT IGNORE INTO `class_course_assignments` (id, class_id, course_id, teacher_id) 
+VALUES (601, 501, 401, 35); -- GV 35 dạy Lớp 501 môn 401
+
+-- 3. GHI DANH SINH VIÊN (ID 2001) VÀO LỚP (ID 501)
+-- (Đây là bước quan trọng nhất)
+INSERT IGNORE INTO `class_student` (class_model_id, student_id) 
+VALUES (501, 2001); -- Gán SV 2001 vào Lớp 501
+
+-- 4. TẠO LỊCH HỌC CHO LỚP NÀY VÀO HÔM NAY (2025-10-22)
+INSERT IGNORE INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
+VALUES 
+(701, 601, 101, '2025-10-22', 'Tiết 1-3 (Nhập môn LT)', 'scheduled'),
+(702, 601, 101, '2025-10-22', 'Tiết 4-6 (Nhập môn LT)', 'scheduled');
