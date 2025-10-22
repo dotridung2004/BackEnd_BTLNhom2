@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Models\Schedule; 
 use Carbon\Carbon;
+use App\Models\LeaveRequest; // 👈 Add
+use App\Models\MakeupClass;  // 👈 Add
+use Illuminate\Support\Facades\DB;
 class UserController extends Controller
 {
     /**
@@ -338,5 +341,86 @@ class UserController extends Controller
         // 'l' = Tên thứ đầy đủ (ví dụ: "Thứ Ba")
         // 'd/m/Y' = Ngày/Tháng/Năm
         return $date->locale('vi')->translatedFormat('l, d/m/Y');
+    }
+    public function getReportData(Request $request, User $user)
+    {
+        // 1. Validate Input Dates
+        $validated = $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d|after_or_equal:start_date',
+        ]);
+        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
+        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
+
+        // 2. Query Schedules in Date Range
+        // Use the existing helper function but for a range
+        $schedules = $this->getSchedulesForDates($user, [$startDate, $endDate]);
+
+        // 3. Calculate Summary Statistics (EXAMPLES - refine these!)
+        //    - Total Hours/Periods: Needs logic based on 'session' or better columns.
+        //      Let's just count sessions for now as a placeholder.
+        $totalSessions = $schedules->count();
+        //    - Absences: Count approved leave requests linked to these schedules
+        $absenceCount = LeaveRequest::where('teacher_id', $user->id)
+                            ->where('status', 'approved')
+                            // Ideally, link LeaveRequest directly to schedule_id
+                            // This assumes leave date is enough (might be inaccurate)
+                            ->whereBetween('created_at', [$startDate, $endDate]) // Or use a specific 'leave_date' column
+                            ->count();
+        //    - Makeups: Count approved/done makeup classes linked to original schedules in range
+        $makeupCount = MakeupClass::where('teacher_id', $user->id)
+                             ->whereIn('status', ['approved', 'done'])
+                             // Check if the *original* schedule date falls within the range
+                             ->whereHas('originalSchedule', function ($q) use ($startDate, $endDate) {
+                                 $q->whereBetween('date', [$startDate, $endDate]);
+                             })
+                             ->count();
+        //    - Attendance Rate: This is complex. Requires summing attendance across all students
+        //      for all schedules in the range. Let's use a placeholder.
+        $attendanceRate = 95.5; // Placeholder - Calculate properly if possible
+
+        // 4. Prepare Chart Data
+        $chartData = [
+            ['label' => 'Tổng buổi', 'value' => $totalSessions], // Using session count
+            ['label' => 'Nghỉ', 'value' => $absenceCount],
+            ['label' => 'Dạy bù', 'value' => $makeupCount],
+            // Note: Attendance Rate is a percentage, maybe not suitable for simple bar/pie sum
+            // You might chart 'Present Sessions' vs 'Absent Sessions' instead
+        ];
+
+        // 5. Format Detailed List (Using existing helper)
+        $detailedList = $this->formatSchedulesForReport($schedules); // Use a potentially adapted formatting function
+
+
+        // 6. Return Combined JSON Response
+        return response()->json([
+            'summary' => [
+                'total_sessions' => $totalSessions, // Renamed from total_hours
+                'absences_count' => $absenceCount,
+                'makeups_count' => $makeupCount,
+                'attendance_rate' => round($attendanceRate, 1), // Round to 1 decimal
+            ],
+            'chart_data' => $chartData,
+            'details' => $detailedList,
+        ]);
+    }
+
+    /**
+     * HÀM HỖ TRỢ (ADAPTED): Format lịch dạy specifically for the report list
+     * (Could be similar to formatSchedules but might need minor adjustments like date format)
+     */
+    private function formatSchedulesForReport($schedules)
+    {
+        // Using formatSchedules for now, adapt if report needs different fields/formats
+        return $this->formatSchedules($schedules, Carbon::now()) // Pass Carbon::now() or handle differently if needed
+            ->map(function($formattedSchedule) use ($schedules) {
+                 // Add the date to each item for frontend display convenience
+                 $originalSchedule = $schedules->firstWhere('id', $formattedSchedule['id']);
+                 $formattedSchedule['date_string'] = $originalSchedule ? $originalSchedule->date->format('d/m') : 'N/A'; // Add formatted date
+                 // You might also add student count / attendance % per session here if feasible
+                 $formattedSchedule['students'] = 'N/A'; // Placeholder
+                 $formattedSchedule['attendance'] = 'N/A'; // Placeholder
+                 return $formattedSchedule;
+            });
     }
 }

@@ -31,4 +31,11 @@ class ClassModel extends Model
     public function classCourseAssignments(){ // 👈 Sửa 'Assignment' thành 'Assignments' (số nhiều)
         return $this->hasMany(ClassCourseAssignment::class,'class_id');
     }
+    public function students()
+    {
+        // belongsToMany(Model liên quan, 'tên_bảng_trung_gian', 'khóa_ngoại_của_model_này', 'khóa_ngoại_của_model_liên_quan')
+        return $this->belongsToMany(User::class, 'class_student', 'class_model_id', 'student_id')
+                    ->where('role', 'student') // Chỉ lấy những user có vai trò là 'student'
+                    ->withTimestamps(); // Nếu bảng trung gian của bạn có timestamps (created_at, updated_at)
+    }
 }

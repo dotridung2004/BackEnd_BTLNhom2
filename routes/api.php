@@ -27,3 +27,9 @@ Route::apiResource('schedules', ScheduleController::class);
 Route::post('login', [AuthController::class, 'login']);
 Route::get('/users/{user}/home-summary', [UserController::class, 'getHomeSummary']);
 Route::get('/users/{user}/schedule-data', [UserController::class, 'getScheduleData']);
+Route::get('/users/{user}/report-data', [UserController::class, 'getReportData']);
+// Lấy danh sách sinh viên + điểm danh cho lịch dạy cụ thể theo ngày
+Route::get('/schedules/{schedule}/students-attendance', [AttendanceController::class, 'getStudentsAndAttendance']);
+// Lưu/Cập nhật điểm danh hàng loạt
+Route::post('/attendances/bulk-save', [AttendanceController::class, 'saveBulkAttendance']);
+Route::get('/users/{user}/schedules-by-date', [ScheduleController::class, 'getSchedulesByDateForTeacher']);

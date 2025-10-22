@@ -1068,3 +1068,41 @@ VALUES (
     'Tiết 7-9 (13:30 - 16:10)', -- Ca/Tiết học
     'scheduled' -- Trạng thái
 );
+
+
+-- Thêm môn học (ví dụ ID = 201)
+INSERT INTO courses (id, name, code, credits)
+VALUES (201, 'Lập trình Web Nâng cao', 'CSE480', 3);
+
+-- Thêm lớp học (ví dụ ID = 201)
+INSERT INTO classes (id, name, semester, academic_year)
+VALUES (201, 'Lớp 66KTPM-1', 'HK1', '2025-2026');
+
+-- Thêm phòng học (ví dụ ID = 201)
+INSERT INTO rooms (id, name, location)
+VALUES (201, 'Phòng 401-A1', 'Tòa A1, Tầng 4');
+
+
+-- Tạo phân công giảng dạy (ví dụ ID = 201)
+INSERT INTO class_course_assignments (id, class_id, course_id, teacher_id)
+VALUES (201, 201, 201, 35);
+
+-- Tạo lịch dạy thứ nhất (ví dụ)
+INSERT INTO schedules (class_course_assignment_id, room_id, `date`, `session`, `status`)
+VALUES (
+    201,            -- ID của phân công (liên kết User 35 + Lớp 201 + Môn 201)
+    201,            -- ID của phòng học (P.401-A1)
+    '2025-10-22',   -- Ngày cần hiển thị
+    'Tiết 1-3',     -- Thông tin buổi học
+    'scheduled'     -- Trạng thái
+);
+
+-- Tạo lịch dạy thứ hai (ví dụ)
+INSERT INTO schedules (class_course_assignment_id, room_id, `date`, `session`, `status`)
+VALUES (
+    201,            -- Dùng lại phân công cũ
+    201,            -- Dùng lại phòng cũ (hoặc phòng khác)
+    '2025-10-22',   -- Cùng ngày
+    'Tiết 4-6',     -- Buổi học khác
+    'scheduled'
+);
