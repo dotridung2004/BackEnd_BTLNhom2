@@ -138,7 +138,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'schedule_id' => 'required|exists:schedules,id',
-            'date'        => 'required|date_format:Y-m-d',
+            // 'date'        => 'required|date_format:Y-m-d',
             'attendances' => 'required|array',
             // Validate từng phần tử trong mảng attendances
             'attendances.*.student_id' => 'required|exists:users,id', // Đảm bảo student_id tồn tại trong bảng users

@@ -33,3 +33,4 @@ Route::get('/schedules/{schedule}/students-attendance', [AttendanceController::c
 // Lưu/Cập nhật điểm danh hàng loạt
 Route::post('/attendances/bulk-save', [AttendanceController::class, 'saveBulkAttendance']);
 Route::get('/users/{user}/schedules-by-date', [ScheduleController::class, 'getSchedulesByDateForTeacher']);
+Route::get('/users/{user}/leave-makeup-summary', [UserController::class, 'getLeaveMakeupSummary']);
