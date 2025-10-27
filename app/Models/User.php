@@ -6,10 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens; // <-- 1. ADD THIS IMPORT
+
 class User extends Authenticatable
 {
+    // 👇 2. ADD HasApiTokens HERE 👇
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable; // <-- ADDED HasApiTokens
 
     /**
      * The attributes that are mass assignable.
@@ -29,6 +32,8 @@ class User extends Authenticatable
         'role',
         'status',
     ];
+
+    // --- Relationships ---
     public function department(){
         return $this->belongsTo(Department::class);
     }
@@ -44,6 +49,8 @@ class User extends Authenticatable
     public function makeupClasses(){
         return $this->hasMany(MakeupClass::class,'teacher_id');
     }
+    // --- End Relationships ---
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -61,6 +68,6 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        // 'password' => 'hashed', // Laravel 10+ tự hash
+        // 'password' => 'hashed', // Automatically handled in Laravel 10+ if not specified
     ];
 }

@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User; // 👈 Thêm
-use App\Models\Schedule; // 👈 Thêm
-use Carbon\Carbon; //
+
+// 👇 *** THÊM CÁC DÒNG NÀY ***
+use App\Models\Schedule; // Import model Schedule
+use App\Models\User;     // (Giữ lại nếu các hàm khác cần)
+use Carbon\Carbon;       // (Giữ lại nếu các hàm khác cần)
+// 👆 *** KẾT THÚC THÊM ***
 
 class ScheduleController extends Controller
 {
@@ -15,204 +18,123 @@ class ScheduleController extends Controller
      * path="/api/schedules",
      * operationId="getSchedulesList",
      * tags={"Schedules (CRUD)"},
-     * summary="Lấy danh sách Lịch học (Chưa triển khai)",
+     * summary="Lấy danh sách Lịch học", // Sửa summary
      * security={{"bearerAuth":{}}},
-     * @OA\Response(response=200, description="Chưa triển khai")
+     * @OA\Response(
+     * response=200,
+     * description="Thành công, trả về danh sách lịch học", // Sửa description
+     * @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Schedule")) // Tham chiếu đến Schema (nếu có)
+     * ),
+     * @OA\Response(response=401, description="Chưa xác thực")
      * )
      */
     public function index()
     {
-        //
+        // --- 👇 BẮT ĐẦU TRIỂN KHAI ---
+        // Lấy tất cả lịch học và load các quan hệ cần thiết cho Frontend
+        // Dựa vào model Schedule.fromJson của bạn, chúng ta cần:
+        // - room
+        // - classCourseAssignment.teacher
+        // - classCourseAssignment.classModel
+        // - classCourseAssignment.course
+        $schedules = Schedule::with([
+            'room', // Tải thông tin phòng học
+            'classCourseAssignment.teacher',  // Tải thông tin giảng viên qua bảng trung gian
+            'classCourseAssignment.classModel', // Tải thông tin lớp học qua bảng trung gian
+            'classCourseAssignment.course'    // Tải thông tin học phần qua bảng trung gian
+        ])
+        ->orderBy('date', 'asc') // Sắp xếp theo ngày (tùy chọn)
+        ->orderBy('session', 'asc') // Sắp xếp theo tiết (tùy chọn)
+        ->get(); // Lấy tất cả (Cân nhắc dùng ->paginate(50) nếu dữ liệu lớn)
+
+        // Trả về dữ liệu dưới dạng JSON
+        return response()->json($schedules);
+        // --- 👆 KẾT THÚC TRIỂN KHAI ---
     }
 
     /**
-     * @OA\Post(
-     * path="/api/schedules",
-     * operationId="storeSchedule",
-     * tags={"Schedules (CRUD)"},
-     * summary="Tạo Lịch học (Chưa triển khai)",
-     * security={{"bearerAuth":{}}},
-     * @OA\Response(response=200, description="Chưa triển khai")
-     * )
+     * @OA\Post(...) // Các hàm khác giữ nguyên (chưa triển khai)
      */
     public function store(Request $request)
     {
-        //
+        // ... (Chưa triển khai)
     }
 
     /**
-     * @OA\Get(
-     * path="/api/schedules/{schedule}",
-     * operationId="getScheduleById",
-     * tags={"Schedules (CRUD)"},
-     * summary="Lấy 1 Lịch học (Chưa triển khai)",
-     * security={{"bearerAuth":{}}},
-     * @OA\Parameter(name="schedule", in="path", required=true, @OA\Schema(type="integer")),
-     * @OA\Response(response=200, description="Chưa triển khai")
-     * )
+     * @OA\Get(...) // Các hàm khác giữ nguyên (chưa triển khai)
      */
     public function show(string $id)
     {
-        //
+        // ... (Chưa triển khai)
     }
 
     /**
-     * @OA\Put(
-     * path="/api/schedules/{schedule}",
-     * operationId="updateSchedule",
-     * tags={"Schedules (CRUD)"},
-     * summary="Cập nhật Lịch học (Chưa triển khai)",
-     * security={{"bearerAuth":{}}},
-     * @OA\Parameter(name="schedule", in="path", required=true, @OA\Schema(type="integer")),
-     * @OA\Response(response=200, description="Chưa triển khai")
-     * )
+     * @OA\Put(...) // Các hàm khác giữ nguyên (chưa triển khai)
      */
     public function update(Request $request, string $id)
     {
-        //
+        // ... (Chưa triển khai)
     }
 
     /**
-     * @OA\Delete(
-     * path="/api/schedules/{schedule}",
-     * operationId="deleteSchedule",
-     * tags={"Schedules (CRUD)"},
-     * summary="Xóa Lịch học (Chưa triển khai)",
-     * security={{"bearerAuth":{}}},
-     * @OA\Parameter(name="schedule", in="path", required=true, @OA\Schema(type="integer")),
-     * @OA\Response(response=200, description="Chưa triển khai")
-     * )
+     * @OA\Delete(...) // Các hàm khác giữ nguyên (chưa triển khai)
      */
     public function destroy(string $id)
     {
-        //
+        // ... (Chưa triển khai)
     }
 
-    /**
-     * @OA\Get(
-     * path="/api/users/{user}/schedules-by-date",
-     * operationId="getSchedulesByDateForTeacher",
-     * tags={"Schedules"},
-     * summary="Lấy lịch dạy (theo ngày) của giáo viên (cho dropdown xin nghỉ)",
-     * security={{"bearerAuth":{}}},
-     * @OA\Parameter(
-     * name="user",
-     * in="path",
-     * required=true,
-     * description="ID của giáo viên",
-     * @OA\Schema(type="integer")
-     * ),
-     * @OA\Parameter(
-     * name="date",
-     * in="query",
-     * required=true,
-     * description="Ngày cần lấy lịch (Y-m-d)",
-     * @OA\Schema(type="string", format="date", example="2025-10-24")
-     * ),
-     * @OA\Response(
-     * response=200,
-     * description="Thành công",
-     * @OA\JsonContent(
-     * type="array",
-     * @OA\Items(
-     * @OA\Property(property="schedule_id", type="integer", example=1),
-     * @OA\Property(property="display_name", type="string", example="Lập trình Web (IT1) - 1-2")
-     * )
-     * )
-     * ),
-     * @OA\Response(
-     * response=422,
-     * description="Lỗi validate ngày"
-     * )
-     * )
-     */
+    // --- CÁC HÀM API KHÁC (getSchedulesByDateForTeacher, getAvailableSchedulesForLeave) ---
+    // Giữ nguyên các hàm này nếu chúng đã hoạt động đúng
+    // ...
     public function getSchedulesByDateForTeacher(Request $request, User $user)
     {
-        // Validate ngày gửi lên
-        $request->validate(['date' => 'required|date_format:Y-m-d']);
-        $date = Carbon::parse($request->query('date'));
-
-        // Lấy lịch dạy của giáo viên trong ngày đó
-        $schedules = Schedule::where('date', $date)
-            ->whereHas('classCourseAssignment', function ($q) use ($user) {
-                $q->where('teacher_id', $user->id);
-            })
-            // Load các thông tin cần thiết để hiển thị tên
-            ->with(['classCourseAssignment.course', 'classCourseAssignment.classModel'])
-            ->orderBy('session', 'asc') // Sắp xếp theo tiết học
-            ->get();
-
-        // Format lại dữ liệu cho dropdown ở Flutter
-        $formatted = $schedules->map(function ($schedule) {
-            // Lấy tên môn học và tên lớp (giả sử cột 'name' trong bảng classes là mã lớp/tên lớp)
-            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
-            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
-            return [
-                'schedule_id' => $schedule->id, // ID của lịch dạy
-                // Kết hợp thông tin để hiển thị (Tên môn (Mã lớp) - Tiết học)
-                'display_name' => "{$courseName} ({$classCode}) - {$schedule->session}"
-            ];
-        });
-
-        return response()->json($formatted);
+        // ... (Giữ nguyên code hiện tại của bạn)
+         $request->validate(['date' => 'required|date_format:Y-m-d']);
+         $date = Carbon::parse($request->query('date'));
+         $schedules = Schedule::where('date', $date)
+             ->whereHas('classCourseAssignment', function ($q) use ($user) {
+                 $q->where('teacher_id', $user->id);
+             })
+             ->with(['classCourseAssignment.course', 'classCourseAssignment.classModel'])
+             ->orderBy('session', 'asc')
+             ->get();
+         $formatted = $schedules->map(function ($schedule) {
+             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+             return [
+                 'schedule_id' => $schedule->id,
+                 'display_name' => "{$courseName} ({$classCode}) - {$schedule->session}"
+             ];
+         });
+         return response()->json($formatted);
     }
 
-    /**
-     * @OA\Get(
-     * path="/api/users/{user}/available-schedules-for-leave",
-     * operationId="getAvailableSchedulesForLeave",
-     * tags={"Schedules"},
-     * summary="Lấy lịch dạy SẮP TỚI của giáo viên (để chọn khi xin nghỉ)",
-     * security={{"bearerAuth":{}}},
-     * @OA\Parameter(
-     * name="user",
-     * in="path",
-     * required=true,
-     * description="ID của giáo viên",
-     * @OA\Schema(type="integer")
-     * ),
-     * @OA\Response(
-     * response=200,
-     * description="Thành công",
-     * @OA\JsonContent(
-     * type="array",
-     * @OA\Items(
-     * @OA\Property(property="schedule_id", type="integer", example=10),
-     * @OA\Property(property="display_name", type="string", example="24/10/2025 - 1-2 - Lập trình Web (IT1)")
-     * )
-     * )
-     * )
-     * )
-     */
     public function getAvailableSchedulesForLeave(User $user)
     {
-        // Lấy lịch dạy sắp tới (ví dụ: từ ngày mai trở đi)
-        // và chưa bị hủy hoặc chưa có đơn xin nghỉ pending/approved
-        $upcomingSchedules = Schedule::where('date', '>=', Carbon::tomorrow())
-            ->where('status', 'scheduled') // Chỉ lấy lịch chưa dạy/hủy
-            ->whereHas('classCourseAssignment', function ($q) use ($user) {
-                $q->where('teacher_id', $user->id);
-            })
-            // Loại trừ những lịch đã có đơn xin nghỉ đang chờ hoặc đã duyệt
-            ->whereDoesntHave('leaveRequests', function ($query) {
-                $query->whereIn('status', ['pending', 'approved']);
-            })
-            ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel'])
-            ->orderBy('date', 'asc')
-            ->orderBy('session', 'asc')
-            ->limit(50) // Giới hạn số lượng trả về
-            ->get();
-
-        // Format tương tự getSchedulesByDateForTeacher nhưng thêm ngày
-        $formatted = $upcomingSchedules->map(function ($schedule) {
-            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
-            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
-            return [
-                'schedule_id' => $schedule->id,
-                'display_name' => $schedule->date->format('d/m/Y') . " - {$schedule->session} - {$courseName} ({$classCode})"
-            ];
-        });
-
-        return response()->json($formatted);
+        // ... (Giữ nguyên code hiện tại của bạn)
+         $upcomingSchedules = Schedule::where('date', '>=', Carbon::tomorrow())
+             ->where('status', 'scheduled')
+             ->whereHas('classCourseAssignment', function ($q) use ($user) {
+                 $q->where('teacher_id', $user->id);
+             })
+             ->whereDoesntHave('leaveRequests', function ($query) {
+                 $query->whereIn('status', ['pending', 'approved']);
+             })
+             ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel'])
+             ->orderBy('date', 'asc')
+             ->orderBy('session', 'asc')
+             ->limit(50)
+             ->get();
+         $formatted = $upcomingSchedules->map(function ($schedule) {
+             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+             return [
+                 'schedule_id' => $schedule->id,
+                 'display_name' => $schedule->date->format('d/m/Y') . " - {$schedule->session} - {$courseName} ({$classCode})"
+             ];
+         });
+         return response()->json($formatted);
     }
+
 }
