@@ -13,7 +13,14 @@ use Illuminate\Support\Facades\Auth; // Để lấy user đã đăng nhập (khu
 class LeaveRequestController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     * path="/api/leaverequests",
+     * operationId="getLeaveRequestsList",
+     * tags={"Leave Requests"},
+     * summary="Lấy DS Đơn nghỉ (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
      */
     public function index()
     {
@@ -21,8 +28,65 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     * --- HÀM NÀY ĐÃ ĐƯỢC BỔ SUNG ---
+     * @OA\Post(
+     * path="/api/leave-requests",
+     * operationId="storeLeaveRequest",
+     * tags={"Leave Requests"},
+     * summary="Gửi yêu cầu xin nghỉ (Dùng route /api/leave-requests)",
+     * description="Route /api/leaverequests (resource) cũng trỏ về đây",
+     * security={{"bearerAuth":{}}},
+     * @OA\RequestBody(
+     * required=true,
+     * @OA\JsonContent(
+     * required={"schedule_id", "reason"},
+     * @OA\Property(property="schedule_id", type="integer", description="ID của lịch dạy muốn nghỉ", example=12),
+     * @OA\Property(property="reason", type="string", description="Lý do xin nghỉ", example="Bị ốm")
+     * )
+     * ),
+     * @OA\Response(
+     * response=201,
+     * description="Gửi yêu cầu thành công",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=401,
+     * description="Chưa đăng nhập"
+     * ),
+     * @OA\Response(
+     * response=422,
+     * description="Lỗi validation"
+     * )
+     * )
+     *
+     * @OA\Post(
+     * path="/api/leaverequests",
+     * operationId="storeLeaveRequestResource",
+     * tags={"Leave Requests"},
+     * summary="Gửi yêu cầu xin nghỉ (Dùng route resource /api/leaverequests)",
+     * description="Route /api/leave-requests (custom) cũng trỏ về đây",
+     * security={{"bearerAuth":{}}},
+     * @OA\RequestBody(
+     * required=true,
+     * @OA\JsonContent(
+     * required={"schedule_id", "reason"},
+     * @OA\Property(property="schedule_id", type="integer", description="ID của lịch dạy muốn nghỉ", example=12),
+     * @OA\Property(property="reason", type="string", description="Lý do xin nghỉ", example="Bị ốm")
+     * )
+     * ),
+     * @OA\Response(
+     * response=201,
+     * description="Gửi yêu cầu thành công",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=401,
+     * description="Chưa đăng nhập"
+     * ),
+     * @OA\Response(
+     * response=422,
+     * description="Lỗi validation"
+     * )
+     * )
      */
     public function store(Request $request)
     {
@@ -38,7 +102,7 @@ class LeaveRequestController extends Controller
         $documentUrl = null;
         // if ($request->hasFile('document')) {
         //     $path = $request->file('document')->store('leave_documents', 'public');
-        //     $documentUrl = asset('storage/' . $path);
+        //     $documentUrl = asset('storage/'Gửi yêu cầu dạy bù thành công . $path);
         // }
 
         // 2. Tạo bản ghi mới trong database
@@ -56,7 +120,15 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     * path="/api/leaverequests/{leaverequest}",
+     * operationId="getLeaveRequestById",
+     * tags={"Leave Requests"},
+     * summary="Xem 1 Đơn nghỉ (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="leaverequest", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
      */
     public function show(string $id)
     {
@@ -64,7 +136,15 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     * path="/api/leaverequests/{leaverequest}",
+     * operationId="updateLeaveRequest",
+     * tags={"Leave Requests"},
+     * summary="Cập nhật Đơn nghỉ (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="leaverequest", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
      */
     public function update(Request $request, string $id)
     {
@@ -72,7 +152,15 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     * path="/api/leaverequests/{leaverequest}",
+     * operationId="deleteLeaveRequest",
+     * tags={"Leave Requests"},
+     * summary="Xóa Đơn nghỉ (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="leaverequest", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
      */
     public function destroy(string $id)
     {
@@ -80,8 +168,33 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * --- HÀM NÀY ĐÃ ĐƯỢC SỬA LẠI ---
-     * Lấy lịch sử các đơn xin nghỉ của một giáo viên.
+     * @OA\Get(
+     * path="/api/users/{user}/leave-history",
+     * operationId="getLeaveHistoryForTeacher",
+     * tags={"Leave Requests"},
+     * summary="Lấy lịch sử xin nghỉ của giáo viên",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của giáo viên",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent(
+     * type="array",
+     * @OA\Items(
+     * @OA\Property(property="leave_request_id", type="integer"),
+     * @OA\Property(property="subject_name", type="string"),
+     * @OA\Property(property="leave_status", type="string", enum={"pending", "approved", "rejected"}),
+     * @OA\Property(property="reason", type="string")
+     * )
+     * )
+     * )
+     * )
      */
     public function getLeaveHistoryForTeacher(User $user)
     {

@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use App\Models\Schedule; 
+use App\Models\Schedule;
 use Carbon\Carbon;
 use App\Models\LeaveRequest;
 use App\Models\MakeupClass;
@@ -17,7 +17,18 @@ use Illuminate\Support\Facades\Auth; // 👈 *** THÊM DÒNG NÀY ***
 class UserController extends Controller
 {
     /**
-     * Lấy danh sách tất cả người dùng
+     * @OA\Get(
+     * path="/api/users",
+     * operationId="getUsersList",
+     * tags={"Users (CRUD)"},
+     * summary="Lấy danh sách người dùng (phân trang 50)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent()
+     * )
+     * )
      */
     public function index()
     {
@@ -26,7 +37,36 @@ class UserController extends Controller
     }
 
     /**
-     * Tạo mới người dùng
+     * @OA\Post(
+     * path="/api/users",
+     * operationId="storeUser",
+     * tags={"Users (CRUD)"},
+     * summary="Tạo mới người dùng",
+     * security={{"bearerAuth":{}}},
+     * @OA\RequestBody(
+     * required=true,
+     * @OA\JsonContent(
+     * required={"name", "first_name", "last_name", "email", "password", "phone_number", "role", "status"},
+     * @OA\Property(property="name", type="string", example="Nguyễn Văn A"),
+     * @OA\Property(property="first_name", type="string", example="Nguyễn Văn"),
+     * @OA\Property(property="last_name", type="string", example="A"),
+     * @OA\Property(property="email", type="string", format="email", example="a@example.com"),
+     * @OA\Property(property="password", type="string", format="password", example="password123"),
+     * @OA\Property(property="phone_number", type="string", example="0905123456"),
+     * @OA\Property(property="role", type="string", enum={"student", "teacher", "training_office", "head_of_department"}),
+     * @OA\Property(property="status", type="string", enum={"active", "inactive", "banned"})
+     * )
+     * ),
+     * @OA\Response(
+     * response=201,
+     * description="Tạo tài khoản thành công",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=422,
+     * description="Dữ liệu không hợp lệ (Validation error)"
+     * )
+     * )
      */
     public function store(Request $request)
     {
@@ -54,7 +94,29 @@ class UserController extends Controller
     }
 
     /**
-     * Xem thông tin 1 người dùng
+     * @OA\Get(
+     * path="/api/users/{user}",
+     * operationId="getUserById",
+     * tags={"Users (CRUD)"},
+     * summary="Xem thông tin 1 người dùng",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của người dùng",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=404,
+     * description="Không tìm thấy người dùng"
+     * )
+     * )
      */
     public function show($id)
     {
@@ -66,7 +128,46 @@ class UserController extends Controller
     }
 
     /**
-     * Cập nhật thông tin người dùng
+     * @OA\Put(
+     * path="/api/users/{user}",
+     * operationId="updateUser",
+     * tags={"Users (CRUD)"},
+     * summary="Cập nhật thông tin người dùng (Gửi bằng PUT)",
+     * description="Lưu ý: Route list của bạn dùng PUT|PATCH, nhưng form data chỉ hỗ trợ POST. Nếu dùng Postman, hãy chọn PUT. Nếu dùng form HTML, bạn phải dùng POST và thêm `_method: 'PUT'` vào body.",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của người dùng",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\RequestBody(
+     * required=false,
+     * description="Gửi các trường cần cập nhật. Nếu dùng `application/x-www-form-urlencoded` thì phải thêm `_method: 'PUT'`",
+     * @OA\MediaType(
+     * mediaType="application/json",
+     * @OA\Schema(
+     * @OA\Property(property="name", type="string", example="Nguyễn Văn B"),
+     * @OA\Property(property="email", type="string", format="email", example="b@example.com"),
+     * @OA\Property(property="status", type="string", enum={"active", "inactive"})
+     * )
+     * )
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Cập nhật thông tin thành công",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=404,
+     * description="Không tìm thấy người dùng"
+     * ),
+     * @OA\Response(
+     * response=422,
+     * description="Dữ liệu không hợp lệ"
+     * )
+     * )
      */
     public function update(Request $request, $id)
     {
@@ -79,7 +180,7 @@ class UserController extends Controller
             'name'          => 'sometimes|required|string|max:255',
             'first_name'    => 'sometimes|required|string|max:100',
             'last_name'     => 'sometimes|required|string|max:100',
-            'email'         => ['sometimes','required','email', Rule::unique('users','email')->ignore($user->id)],
+            'email'         => ['sometimes', 'required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password'      => 'nullable|string|min:6',
             'phone_number'  => 'sometimes|required|string|max:20',
             'avatar_url'    => 'nullable|string',
@@ -104,7 +205,28 @@ class UserController extends Controller
     }
 
     /**
-     * Xóa người dùng
+     * @OA\Delete(
+     * path="/api/users/{user}",
+     * operationId="deleteUser",
+     * tags={"Users (CRUD)"},
+     * summary="Xóa người dùng",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của người dùng",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Xóa người dùng thành công"
+     * ),
+     * @OA\Response(
+     * response=404,
+     * description="Không tìm thấy người dùng"
+     * )
+     * )
      */
     public function destroy($id)
     {
@@ -118,34 +240,55 @@ class UserController extends Controller
 
     // --- API CHO TRANG CHỦ GIÁO VIÊN ---
 
+    /**
+     * @OA\Get(
+     * path="/api/users/{user}/home-summary",
+     * operationId="getTeacherHomeSummary",
+     * tags={"Teachers (User)"},
+     * summary="Lấy tóm tắt trang chủ cho GIÁO VIÊN",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của giáo viên",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent()
+     * )
+     * )
+     */
     public function getHomeSummary(User $user)
     {
         $today = Carbon::today();
         $now = Carbon::now();
 
         $todaySchedulesQuery = Schedule::where('date', $today)
-            ->whereHas('classCourseAssignment', function($query) use ($user) {
-                $query->where('teacher_id', $user->id); 
+            ->whereHas('classCourseAssignment', function ($query) use ($user) {
+                $query->where('teacher_id', $user->id);
             })
             ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel'])
-            ->orderBy('session', 'asc'); 
+            ->orderBy('session', 'asc');
 
         $schedules = $todaySchedulesQuery->get();
-        
-        $todayLessonsCount = $schedules->count(); 
+
+        $todayLessonsCount = $schedules->count();
 
         $startOfWeek = $today->copy()->startOfWeek();
         $endOfWeek = $today->copy()->endOfWeek();
-        
+
         $weekLessonsCount = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
-             ->whereHas('classCourseAssignment', function($query) use ($user) {
+            ->whereHas('classCourseAssignment', function ($query) use ($user) {
                 $query->where('teacher_id', $user->id);
-             })
-             ->count();
-        
+            })
+            ->count();
+
         $completionPercent = 0.0; // Placeholder
 
-        $formattedSchedules = $schedules->map(function($schedule) use ($now) {
+        $formattedSchedules = $schedules->map(function ($schedule) use ($now) {
             $location = $schedule->room?->location ?? 'N/A';
             $roomName = $schedule->room?->name ?? 'N/A';
             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
@@ -154,10 +297,10 @@ class UserController extends Controller
 
             return [
                 'id' => $schedule->id,
-                'time_range' => $schedule->session, 
+                'time_range' => $schedule->session,
                 'lessons' => $schedule->session,
                 'title' => $courseName,
-                'course_code' => "({$classCode})", 
+                'course_code' => "({$classCode})",
                 'location' => "{$roomName} - {$location}",
                 'status' => $status,
             ];
@@ -175,11 +318,39 @@ class UserController extends Controller
 
     // --- API CHO LỊCH DẠY GIÁO VIÊN ---
     
+    /**
+     * @OA\Get(
+     * path="/api/users/{user}/schedule-data",
+     * operationId="getTeacherScheduleData",
+     * tags={"Teachers (User)"},
+     * summary="Lấy dữ liệu lịch dạy (hôm nay, tuần) cho GIÁO VIÊN",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của giáo viên",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Parameter(
+     * name="week_offset",
+     * in="query",
+     * required=false,
+     * description="Offset tuần (0 = tuần này, 1 = tuần sau, -1 = tuần trước)",
+     * @OA\Schema(type="integer", default=0)
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent()
+     * )
+     * )
+     */
     public function getScheduleData(Request $request, User $user)
     {
         $weekOffset = (int)$request->query('week_offset', 0);
         $today = Carbon::today();
-        $startOfWeek = $today->copy()->addWeeks($weekOffset)->startOfWeek(); 
+        $startOfWeek = $today->copy()->addWeeks($weekOffset)->startOfWeek();
 
         $todaySchedules = $this->getSchedulesForDates($user, [Carbon::today()]);
         $todayData = [
@@ -212,7 +383,7 @@ class UserController extends Controller
             $schedulesByDate[$date['full_date']] = [];
         }
 
-        $formattedSchedulesMap = $allWeekSchedules->groupBy(function($schedule) {
+        $formattedSchedulesMap = $allWeekSchedules->groupBy(function ($schedule) {
             return $schedule->date->toDateString();
         });
 
@@ -236,6 +407,45 @@ class UserController extends Controller
 
     // --- API CHO BÁO CÁO GIÁO VIÊN ---
     
+    /**
+     * @OA\Get(
+     * path="/api/users/{user}/report-data",
+     * operationId="getTeacherReportData",
+     * tags={"Teachers (User)"},
+     * summary="Lấy dữ liệu báo cáo cho GIÁO VIÊN",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của giáo viên",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Parameter(
+     * name="start_date",
+     * in="query",
+     * required=true,
+     * description="Ngày bắt đầu (Y-m-d)",
+     * @OA\Schema(type="string", format="date")
+     * ),
+     * @OA\Parameter(
+     * name="end_date",
+     * in="query",
+     * required=true,
+     * description="Ngày kết thúc (Y-m-d)",
+     * @OA\Schema(type="string", format="date")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=422,
+     * description="Lỗi validate ngày tháng"
+     * )
+     * )
+     */
     public function getReportData(Request $request, User $user)
     {
         $validated = $request->validate([
@@ -252,17 +462,17 @@ class UserController extends Controller
 
         $totalSessions = $schedules->count();
         $absenceCount = LeaveRequest::where('teacher_id', $teacherId)
-                            ->where('status', 'approved')
-                            ->whereHas('schedule', function ($q) use ($startDate, $endDate) {
-                                $q->whereBetween('date', [$startDate, $endDate]);
-                            })
-                            ->count();
+            ->where('status', 'approved')
+            ->whereHas('schedule', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('date', [$startDate, $endDate]);
+            })
+            ->count();
         $makeupCount = MakeupClass::where('teacher_id', $teacherId)
-                             ->whereIn('status', ['approved', 'done'])
-                             ->whereHas('originalSchedule', function ($q) use ($startDate, $endDate) {
-                                 $q->whereBetween('date', [$startDate, $endDate]);
-                             })
-                             ->count();
+            ->whereIn('status', ['approved', 'done'])
+            ->whereHas('originalSchedule', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('date', [$startDate, $endDate]);
+            })
+            ->count();
         $attendanceRate = 95.5; // Placeholder
 
         $chartData = [
@@ -287,19 +497,40 @@ class UserController extends Controller
     
     // --- API CHO NGHỈ/BÙ GIÁO VIÊN ---
 
+    /**
+     * @OA\Get(
+     * path="/api/users/{user}/leave-makeup-summary",
+     * operationId="getTeacherLeaveMakeupSummary",
+     * tags={"Teachers (User)"},
+     * summary="Lấy tóm tắt số buổi nghỉ/chờ bù (giáo viên)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của giáo viên",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent()
+     * )
+     * )
+     */
     public function getLeaveMakeupSummary(User $user)
     {
         $teacherId = Auth::id() ?? $user->id; // Ưu tiên Auth::id()
 
         $approvedLeaveCount = LeaveRequest::where('teacher_id', $teacherId)
-                                            ->where('status', 'approved')
-                                            ->count();
+            ->where('status', 'approved')
+            ->count();
         $pendingMakeupCount = LeaveRequest::where('teacher_id', $teacherId)
-                                            ->where('status', 'approved')
-                                            ->whereDoesntHave('makeupClass', function ($query) {
-                                                $query->whereIn('status', ['pending', 'approved', 'done']);
-                                            })
-                                            ->count();
+            ->where('status', 'approved')
+            ->whereDoesntHave('makeupClass', function ($query) {
+                $query->whereIn('status', ['pending', 'approved', 'done']);
+            })
+            ->count();
 
         return response()->json([
             'leave_count' => $approvedLeaveCount,
@@ -307,19 +538,40 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Get(
+     * path="/api/users/{user}/pending-makeup",
+     * operationId="getTeacherPendingMakeupSchedules",
+     * tags={"Teachers (User)"},
+     * summary="Lấy danh sách lịch nghỉ CHỜ dạy bù (giáo viên)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của giáo viên",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent()
+     * )
+     * )
+     */
     public function getPendingMakeupSchedules(User $user)
     {
         $teacherId = Auth::id() ?? $user->id; // Ưu tiên Auth::id()
 
         $pendingLeaves = LeaveRequest::where('teacher_id', $teacherId)
-                                      ->where('status', 'approved')
-                                      ->whereDoesntHave('makeupClass', function ($query) {
-                                          $query->whereIn('status', ['pending', 'approved', 'done']);
-                                      })
-                                      ->with(['schedule.room', 'schedule.classCourseAssignment.course', 'schedule.classCourseAssignment.classModel'])
-                                      ->get();
+            ->where('status', 'approved')
+            ->whereDoesntHave('makeupClass', function ($query) {
+                $query->whereIn('status', ['pending', 'approved', 'done']);
+            })
+            ->with(['schedule.room', 'schedule.classCourseAssignment.course', 'schedule.classCourseAssignment.classModel'])
+            ->get();
 
-        $formatted = $pendingLeaves->map(function($leaveRequest) {
+        $formatted = $pendingLeaves->map(function ($leaveRequest) {
             $schedule = $leaveRequest->schedule;
             if (!$schedule) return null;
             $location = $schedule->room?->location ?? 'N/A';
@@ -344,6 +596,31 @@ class UserController extends Controller
 
     // --- API CHO TRANG CHỦ SINH VIÊN ---
 
+    /**
+     * @OA\Get(
+     * path="/api/students/{user}/home-summary",
+     * operationId="getStudentHomeSummary",
+     * tags={"Students (User)"},
+     * summary="Lấy tóm tắt trang chủ cho SINH VIÊN",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của sinh viên",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=403,
+     * description="Không phải sinh viên"
+     * )
+     * )
+     */
     public function getStudentHomeSummary(User $user)
     {
         if ($user->role !== 'student') {
@@ -354,17 +631,17 @@ class UserController extends Controller
         $now = Carbon::now();
 
         $studentClassIds = DB::table('class_student')
-                             ->where('student_id', $user->id)
-                             ->pluck('class_model_id');
-        
+            ->where('student_id', $user->id)
+            ->pluck('class_model_id');
+
         $assignmentIds = DB::table('class_course_assignments')
-                             ->whereIn('class_id', $studentClassIds)
-                             ->pluck('id');
+            ->whereIn('class_id', $studentClassIds)
+            ->pluck('id');
 
         $todaySchedules = Schedule::where('date', $today)
             ->whereIn('class_course_assignment_id', $assignmentIds)
             ->with([
-                'room', 
+                'room',
                 'classCourseAssignment.course',
                 'classCourseAssignment.classModel',
                 'classCourseAssignment.teacher'
@@ -373,17 +650,17 @@ class UserController extends Controller
             ->get();
 
         $todaySessionCount = $todaySchedules->count();
-        
+
         $startOfWeek = $today->copy()->startOfWeek();
         $endOfWeek = $today->copy()->endOfWeek();
 
         $weekSessionCount = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
             ->whereIn('class_course_assignment_id', $assignmentIds)
             ->count();
-        
+
         $attendanceRate = 95.0; // Dữ liệu giả
 
-        $formattedSchedules = $todaySchedules->map(function($schedule) use ($now) {
+        $formattedSchedules = $todaySchedules->map(function ($schedule) use ($now) {
             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
             $teacherName = $schedule->classCourseAssignment?->teacher?->name ?? 'N/A';
@@ -392,10 +669,10 @@ class UserController extends Controller
 
             return [
                 'id' => $schedule->id,
-                'time_range' => $schedule->session, 
+                'time_range' => $schedule->session,
                 'lessons' => $schedule->session,
                 'title' => $courseName,
-                'course_code' => "({$classCode})", 
+                'course_code' => "({$classCode})",
                 'location' => $location,
                 'status' => $status,
                 'teacher_name' => $teacherName,
@@ -419,10 +696,10 @@ class UserController extends Controller
         // (Sửa lỗi bảo mật: hàm này chỉ nên dùng cho giáo viên, nên dùng Auth::id())
         $teacherId = Auth::id() ?? $user->id;
 
-        $query = Schedule::whereHas('classCourseAssignment', function($q) use ($teacherId) {
-            $q->where('teacher_id', $teacherId); 
+        $query = Schedule::whereHas('classCourseAssignment', function ($q) use ($teacherId) {
+            $q->where('teacher_id', $teacherId);
         })
-        ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel']);
+            ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel']);
 
         if (count($dateRange) == 1) {
             $query->where('date', $dateRange[0]);
@@ -435,19 +712,19 @@ class UserController extends Controller
 
     private function formatSchedules($schedules, Carbon $now)
     {
-        return $schedules->map(function($schedule) use ($now) {
+        return $schedules->map(function ($schedule) use ($now) {
             $location = $schedule->room?->location ?? 'N/A';
             $roomName = $schedule->room?->name ?? 'N/A';
             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
-            $status = $schedule->status; 
+            $status = $schedule->status;
 
             return [
                 'id' => $schedule->id,
                 'time' => $schedule->session,
                 'lessons' => $schedule->session,
                 'title' => $courseName,
-                'course_code' => "({$classCode})", 
+                'course_code' => "({$classCode})",
                 'location' => "{$roomName} - {$location}",
                 'status' => $status,
             ];
@@ -457,7 +734,7 @@ class UserController extends Controller
     private function formatSchedulesForReport($schedules)
     {
         return $this->formatSchedules($schedules, Carbon::now())
-            ->map(function($formattedSchedule) use ($schedules) {
+            ->map(function ($formattedSchedule) use ($schedules) {
                 /** @var \App\Models\Schedule|null $originalSchedule */
                 $originalSchedule = $schedules->firstWhere('id', $formattedSchedule['id']);
                 $formattedSchedule['date_string'] = $originalSchedule ? $originalSchedule->date->format('d/m') : 'N/A';
@@ -470,7 +747,7 @@ class UserController extends Controller
     private function formatDayName(Carbon $date)
     {
         if ($date->isSunday()) return 'CN';
-        return 'T' . ($date->dayOfWeek + 1); 
+        return 'T' . ($date->dayOfWeek + 1);
     }
 
     private function formatFullDateString(Carbon $date)
@@ -478,15 +755,40 @@ class UserController extends Controller
         return $date->locale('vi')->translatedFormat('l, d/m/Y');
     }
 
+    /**
+     * @OA\Get(
+     * path="/api/students/{user}/schedule/week",
+     * operationId="getStudentWeeklySchedule",
+     * tags={"Students (User)"},
+     * summary="Lấy lịch học CẢ TUẦN cho SINH VIÊN",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="user",
+     * in="path",
+     * required=true,
+     * description="ID của sinh viên",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công (Trả về 1 danh sách các lịch học)",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=403,
+     * description="Không phải sinh viên / Không có quyền"
+     * )
+     * )
+     */
     public function getStudentWeeklySchedule(User $user)
     {
         if ($user->role !== 'student') {
             return response()->json(['message' => 'Tài khoản không phải là sinh viên'], 403);
         }
-        
+
         // (Thêm kiểm tra bảo mật: chỉ cho phép sinh viên tự xem)
         if (Auth::id() != $user->id) {
-             return response()->json(['message' => 'Không có quyền truy cập'], 403);
+            return response()->json(['message' => 'Không có quyền truy cập'], 403);
         }
 
         // 1. Xác định ngày trong tuần
@@ -496,28 +798,28 @@ class UserController extends Controller
 
         // 2. Lấy ID các lớp sinh viên này học
         $studentClassIds = DB::table('class_student')
-                            ->where('student_id', $user->id)
-                            ->pluck('class_model_id');
-        
+            ->where('student_id', $user->id)
+            ->pluck('class_model_id');
+
         $assignmentIds = DB::table('class_course_assignments')
-                            ->whereIn('class_id', $studentClassIds)
-                            ->pluck('id');
+            ->whereIn('class_id', $studentClassIds)
+            ->pluck('id');
 
         // 3. Truy vấn tất cả lịch học trong tuần
         $allWeekSchedules = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
             ->whereIn('class_course_assignment_id', $assignmentIds)
             ->with([
-                'room', 
+                'room',
                 'classCourseAssignment.course',
                 'classCourseAssignment.classModel',
                 'classCourseAssignment.teacher'
             ])
-            ->orderBy('date', 'asc')      // Sắp xếp theo ngày
+            ->orderBy('date', 'asc')       // Sắp xếp theo ngày
             ->orderBy('session', 'asc')   // Rồi sắp xếp theo tiết
             ->get();
 
         // 4. Định dạng lại dữ liệu (Quan trọng: phải có 'schedule_date')
-        $formattedSchedules = $allWeekSchedules->map(function($schedule) {
+        $formattedSchedules = $allWeekSchedules->map(function ($schedule) {
             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
             $teacherName = $schedule->classCourseAssignment?->teacher?->name ?? 'N/A';
@@ -526,7 +828,7 @@ class UserController extends Controller
 
             return [
                 'id' => $schedule->id,
-                'time_range' => $schedule->session, 
+                'time_range' => $schedule->session,
                 'lessons' => $schedule->session,
                 'title' => $courseName,
                 'course_code' => $classCode,
@@ -534,7 +836,7 @@ class UserController extends Controller
                 'status' => $status,
                 'teacher_name' => $teacherName,
                 // 👇 *** Rất quan trọng: Thêm trường này cho Flutter ***
-                'schedule_date' => $schedule->date->toIso8601String(), 
+                'schedule_date' => $schedule->date->toIso8601String(),
             ];
         });
 

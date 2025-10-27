@@ -13,20 +13,120 @@ use Illuminate\Validation\Rule;
 
 class AttendanceController extends Controller
 {
-    // ... (Các hàm index, store, show, update, destroy bị comment giữ nguyên) ...
+    /**
+     * @OA\Get(
+     * path="/api/attendances",
+     * operationId="getAttendancesList",
+     * tags={"Attendance"},
+     * summary="Lấy DS Điểm danh (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
+     */
+    public function index()
+    {
+        // ...
+    }
 
     /**
-     * Lấy danh sách sinh viên và trạng thái điểm danh.
-     * Phiên bản ĐÚNG (không dùng 'date')
+     * @OA\Post(
+     * path="/api/attendances",
+     * operationId="storeAttendance",
+     * tags={"Attendance"},
+     * summary="Tạo Điểm danh (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
+     */
+    public function store(Request $request)
+    {
+        // ...
+    }
+
+    /**
+     * @OA\Get(
+     * path="/api/attendances/{attendance}",
+     * operationId="getAttendanceById",
+     * tags={"Attendance"},
+     * summary="Lấy 1 Điểm danh (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="attendance", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
+     */
+    public function show($id)
+    {
+        // ...
+    }
+
+    /**
+     * @OA\Put(
+     * path="/api/attendances/{attendance}",
+     * operationId="updateAttendance",
+     * tags={"Attendance"},
+     * summary="Cập nhật Điểm danh (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="attendance", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
+     */
+    public function update(Request $request, $id)
+    {
+        // ...
+    }
+
+    /**
+     * @OA\Delete(
+     * path="/api/attendances/{attendance}",
+     * operationId="deleteAttendance",
+     * tags={"Attendance"},
+     * summary="Xóa Điểm danh (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="attendance", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
+     */
+    public function destroy($id)
+    {
+        // ...
+    }
+
+    /**
+     * @OA\Get(
+     * path="/api/schedules/{schedule}/students-attendance",
+     * operationId="getStudentsAndAttendanceForSchedule",
+     * tags={"Attendance"},
+     * summary="Lấy danh sách SV và trạng thái điểm danh của 1 lịch học",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="schedule",
+     * in="path",
+     * required=true,
+     * description="ID của lịch học (schedule)",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Thành công. Trả về mảng danh sách SV và status",
+     * @OA\JsonContent(
+     * type="array",
+     * @OA\Items(
+     * @OA\Property(property="student_id", type="integer"),
+     * @OA\Property(property="student_name", type="string"),
+     * @OA\Property(property="status", type="string", enum={"present", "absent", "late"})
+     * )
+     * )
+     * )
+     * )
      */
     public function getStudentsAndAttendance(Request $request, Schedule $schedule)
     {
         // 1. Lấy danh sách sinh viên
         $students = $schedule->classCourseAssignment
-                              ->classModel
-                              ?->students()
-                              ->orderBy('name', 'asc')
-                              ->get(['users.id', 'users.name']);
+            ->classModel
+            ?->students()
+            ->orderBy('name', 'asc')
+            ->get(['users.id', 'users.name']);
 
         if (!$students || $students->isEmpty()) {
             return response()->json([]); // Trả về mảng rỗng nếu không có sinh viên
@@ -34,8 +134,8 @@ class AttendanceController extends Controller
 
         // 2. Lấy điểm danh đã có (Đã xóa where('date'))
         $existingAttendance = Attendance::where('schedule_id', $schedule->id)
-                                        ->whereIn('student_id', $students->pluck('id'))
-                                        ->pluck('status', 'student_id');
+            ->whereIn('student_id', $students->pluck('id'))
+            ->pluck('status', 'student_id');
 
         // 3. Kết hợp kết quả
         $results = $students->map(function ($student) use ($existingAttendance) {
@@ -50,8 +150,42 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Lưu điểm danh hàng loạt
-     * Phiên bản ĐÚNG (không dùng 'date')
+     * @OA\Post(
+     * path="/api/attendances/bulk-save",
+     * operationId="saveBulkAttendance",
+     * tags={"Attendance"},
+     * summary="Lưu điểm danh hàng loạt cho một lịch học",
+     * security={{"bearerAuth":{}}},
+     * @OA\RequestBody(
+     * required=true,
+     * @OA\JsonContent(
+     * required={"schedule_id", "attendances"},
+     * @OA\Property(property="schedule_id", type="integer", description="ID của lịch học", example=15),
+     * @OA\Property(
+     * property="attendances",
+     * type="array",
+     * @OA\Items(
+     * type="object",
+     * required={"student_id", "status"},
+     * @OA\Property(property="student_id", type="integer", example=101),
+     * @OA\Property(property="status", type="string", enum={"present", "absent", "late"}, example="present")
+     * )
+     * )
+     * )
+     * ),
+     * @OA\Response(
+     * response=200,
+     * description="Lưu điểm danh thành công"
+     * ),
+     * @OA\Response(
+     * response=422,
+     * description="Dữ liệu không hợp lệ"
+     * ),
+     * @OA\Response(
+     * response=500,
+     * description="Lỗi server khi lưu"
+     * )
+     * )
      */
     public function saveBulkAttendance(Request $request)
     {

@@ -14,7 +14,14 @@ use Illuminate\Validation\Rule; // (Có thể cần nếu validate phức tạp 
 class MakeupClassController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     * path="/api/makeupclasses",
+     * operationId="getMakeupClassesList",
+     * tags={"Makeup Classes"},
+     * summary="Lấy DS Lớp dạy bù (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
      */
     public function index()
     {
@@ -22,8 +29,69 @@ class MakeupClassController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     * --- ĐÃ SỬA LỖI ---
+     * @OA\Post(
+     * path="/api/makeup-classes",
+     * operationId="storeMakeupClass",
+     * tags={"Makeup Classes"},
+     * summary="Gửi yêu cầu dạy bù (Dùng route /api/makeup-classes)",
+     * description="Route /api/makeupclasses (resource) cũng trỏ về đây",
+     * security={{"bearerAuth":{}}},
+     * @OA\RequestBody(
+     * required=true,
+     * @OA\JsonContent(
+     * required={"original_schedule_id", "new_schedule_date", "new_session", "new_room_id"},
+     * @OA\Property(property="original_schedule_id", type="integer", description="ID lịch dạy GỐC (buổi nghỉ)", example=12),
+     * @OA\Property(property="new_schedule_date", type="string", format="date", description="Ngày dạy bù (Y-m-d)", example="2025-10-30"),
+     * @OA\Property(property="new_session", type="string", description="Ca/tiết dạy bù", example="3-4"),
+     * @OA\Property(property="new_room_id", type="integer", description="ID của phòng dạy bù", example=5)
+     * )
+     * ),
+     * @OA\Response(
+     * response=201,
+     * description="Gửi yêu cầu dạy bù thành công!",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=401,
+     * description="Chưa đăng nhập"
+     * ),
+     * @OA\Response(
+     * response=422,
+     * description="Lỗi validation"
+     * )
+     * )
+     *
+     * @OA\Post(
+     * path="/api/makeupclasses",
+     * operationId="storeMakeupClassResource",
+     * tags={"Makeup Classes"},
+     * summary="Gửi yêu cầu dạy bù (Dùng route resource /api/makeupclasses)",
+     * description="Route /api/makeup-classes (custom) cũng trỏ về đây",
+     * security={{"bearerAuth":{}}},
+     * @OA\RequestBody(
+     * required=true,
+     * @OA\JsonContent(
+     * required={"original_schedule_id", "new_schedule_date", "new_session", "new_room_id"},
+     * @OA\Property(property="original_schedule_id", type="integer", description="ID lịch dạy GỐC (buổi nghỉ)", example=12),
+     * @OA\Property(property="new_schedule_date", type="string", format="date", description="Ngày dạy bù (Y-m-d)", example="2025-10-30"),
+     * @OA\Property(property="new_session", type="string", description="Ca/tiết dạy bù", example="3-4"),
+     * @OA\Property(property="new_room_id", type="integer", description="ID của phòng dạy bù", example=5)
+     * )
+     * ),
+     * @OA\Response(
+     * response=201,
+     * description="Gửi yêu cầu dạy bù thành công!",
+     * @OA\JsonContent()
+     * ),
+     * @OA\Response(
+     * response=401,
+     * description="Chưa đăng nhập"
+     * ),
+     * @OA\Response(
+     * response=422,
+     * description="Lỗi validation"
+     * )
+     * )
      */
     public function store(Request $request)
     {
@@ -40,7 +108,7 @@ class MakeupClassController extends Controller
         // Lấy teacher_id từ người dùng đã xác thực (AN TOÀN HƠN)
         $teacherId = Auth::id();
         if (!$teacherId) {
-             return response()->json(['message' => 'Lỗi xác thực người dùng.'], 401);
+            return response()->json(['message' => 'Lỗi xác thực người dùng.'], 401);
         }
 
         // --- Logic tạo lịch dạy mới (bản nháp) ---
@@ -75,7 +143,15 @@ class MakeupClassController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     * path="/api/makeupclasses/{makeupclass}",
+     * operationId="getMakeupClassById",
+     * tags={"Makeup Classes"},
+     * summary="Xem 1 Lớp bù (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="makeupclass", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
      */
     public function show(string $id)
     {
@@ -83,7 +159,15 @@ class MakeupClassController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     * path="/api/makeupclasses/{makeupclass}",
+     * operationId="updateMakeupClass",
+     * tags={"Makeup Classes"},
+     * summary="Cập nhật Lớp bù (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="makeupclass", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
      */
     public function update(Request $request, string $id)
     {
@@ -91,7 +175,15 @@ class MakeupClassController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     * path="/api/makeupclasses/{makeupclass}",
+     * operationId="deleteMakeupClass",
+     * tags={"Makeup Classes"},
+     * summary="Xóa Lớp bù (Chưa triển khai)",
+     * security={{"bearerAuth":{}}},
+     * @OA\Parameter(name="makeupclass", in="path", required=true, @OA\Schema(type="integer")),
+     * @OA\Response(response=200, description="Chưa triển khai")
+     * )
      */
     public function destroy(string $id)
     {
