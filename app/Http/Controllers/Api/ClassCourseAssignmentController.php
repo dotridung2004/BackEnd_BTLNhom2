@@ -11,6 +11,7 @@ class ClassCourseAssignmentController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * (Dùng cho màn hình "Lớp học phần")
      */
     public function index()
     {
@@ -26,6 +27,27 @@ class ClassCourseAssignmentController extends Controller
         // 3. Trả về dữ liệu dưới dạng JSON
         return response()->json($assignments);
     }
+
+    // 👇 === TÔI ĐÃ THÊM HÀM MỚI NÀY VÀO === 👇
+    /**
+     * Display a listing of the resource with student count.
+     * (Dùng cho màn hình "Học phần đã đăng ký")
+     */
+    public function indexWithStudentCount()
+    {
+        // 'withCount('students')' sẽ tự động thêm cột 'students_count'
+        // Đảm bảo bạn có quan hệ tên 'students' trong Model ClassCourseAssignment
+        $assignments = ClassCourseAssignment::with([
+            'teacher',
+            'course'
+        ])
+        ->withCount('students') 
+        ->get();
+
+        return response()->json($assignments);
+    }
+    // 👆 === KẾT THÚC PHẦN THÊM MỚI === 👆
+
 
     /**
      * Store a newly created resource in storage.
