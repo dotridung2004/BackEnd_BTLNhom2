@@ -21,3 +21,5 @@
 
     > Hash::make('1234567');
     = "$2y$12$G.5JboCSzcMt2iotNDynLO2y0B5RXq1LMmy6a8QUsQ.8klCeS20nS"
+**DUC 
+chạy lệnh tạo bảng r sinh dữ liệu đb mới nhé
