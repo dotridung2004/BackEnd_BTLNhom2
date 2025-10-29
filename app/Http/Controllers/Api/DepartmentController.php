@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Department;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class DepartmentController extends Controller
 {
@@ -12,7 +15,14 @@ class DepartmentController extends Controller
      */
     public function index()
     {
-        //
+        try {
+            // Chỉ đếm divisions, KHÔNG đếm teachers trực tiếp vì không có users.department_id
+            $departments = Department::withCount(['divisions'])->get();
+            return response()->json($departments);
+        } catch (Exception $e) {
+            Log::error("Lỗi DepartmentController@index: " . $e->getMessage());
+            return response()->json([], 500);
+        }
     }
 
     /**
@@ -20,7 +30,7 @@ class DepartmentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // (Sẽ làm sau)
     }
 
     /**
@@ -28,7 +38,7 @@ class DepartmentController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // (Sẽ làm sau)
     }
 
     /**
@@ -36,7 +46,7 @@ class DepartmentController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // (Sẽ làm sau)
     }
 
     /**
@@ -44,6 +54,7 @@ class DepartmentController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        // (Sẽ làm sau)
     }
 }
+
