@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Validator;
 
 class LecturerController extends Controller
 {
-    // ... hàm index() giữ nguyên ...
     public function index()
     {
        try {
@@ -32,11 +31,10 @@ class LecturerController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'user_code' => 'required|string|max:255|unique:users',
+            // <<< XÓA DÒNG VALIDATE user_code Ở ĐÂY
             'password' => 'required|string|min:6',
             'department_id' => 'required|integer|exists:departments,id',
             'phone_number' => 'nullable|string',
-            // <<< SỬA Ở ĐÂY
             'date_of_birth' => 'nullable|date_format:d/m/Y', 
         ]);
 
@@ -45,17 +43,18 @@ class LecturerController extends Controller
         }
 
         try {
-            // <<< SỬA Ở ĐÂY
              $dob = $request->date_of_birth ? \DateTime::createFromFormat('d/m/Y', $request->date_of_birth)->format('Y-m-d') : null;
 
             $lecturer = User::create([
                 'name' => $request->name,
+                'first_name' => $request->name, // Tự động điền first_name
+                'last_name' => '',             // Tự động điền last_name
                 'email' => $request->email,
-                'user_code' => $request->user_code,
+                // <<< XÓA DÒNG user_code Ở ĐÂY
                 'password' => Hash::make($request->password),
                 'department_id' => $request->department_id,
                 'phone_number' => $request->phone_number,
-                'date_of_birth' => $dob, // <<< SỬA Ở ĐÂY
+                'date_of_birth' => $dob,
                 'role' => 'teacher', 
             ]);
 
@@ -66,7 +65,6 @@ class LecturerController extends Controller
             return response()->json(['message' => 'Lỗi khi thêm giảng viên: ' . $e->getMessage()], 500);
         }
     }
-
 
     /**
      * Display the specified resource.
@@ -89,10 +87,9 @@ class LecturerController extends Controller
          $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'user_code' => 'required|string|max:255|unique:users,user_code,' . $id,
+             // <<< XÓA DÒNG VALIDATE user_code Ở ĐÂY
             'department_id' => 'required|integer|exists:departments,id',
             'phone_number' => 'nullable|string',
-            // <<< SỬA Ở ĐÂY
             'date_of_birth' => 'nullable|date_format:d/m/Y',
         ]);
 
@@ -102,16 +99,16 @@ class LecturerController extends Controller
 
         try {
             $lecturer = User::findOrFail($id);
-            // <<< SỬA Ở ĐÂY
             $dob = $request->date_of_birth ? \DateTime::createFromFormat('d/m/Y', $request->date_of_birth)->format('Y-m-d') : null;
 
             $lecturer->update([
                 'name' => $request->name,
+                'first_name' => $request->name, // Tự động cập nhật first_name
                 'email' => $request->email,
-                'user_code' => $request->user_code,
+                // <<< XÓA DÒNG user_code Ở ĐÂY
                 'department_id' => $request->department_id,
                 'phone_number' => $request->phone_number,
-                'date_of_birth' => $dob, // <<< SỬA Ở ĐÂY
+                'date_of_birth' => $dob,
             ]);
 
             $lecturer->load('department');
