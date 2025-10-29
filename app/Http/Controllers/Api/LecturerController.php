@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;     // <<< THÊM MỚI: Để mã hóa mật khẩu
-use Illuminate\Support\Facades\Validator; // <<< THÊM MỚI: Để kiểm tra dữ liệu
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class LecturerController extends Controller
 {
@@ -26,13 +26,9 @@ class LecturerController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-        // <<< THAY THẾ TOÀN BỘ HÀM NÀY
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -40,7 +36,8 @@ class LecturerController extends Controller
             'password' => 'required|string|min:6',
             'department_id' => 'required|integer|exists:departments,id',
             'phone_number' => 'nullable|string',
-            'dob' => 'nullable|date_format:d/m/Y',
+            // <<< SỬA Ở ĐÂY
+            'date_of_birth' => 'nullable|date_format:d/m/Y', 
         ]);
 
         if ($validator->fails()) {
@@ -48,7 +45,8 @@ class LecturerController extends Controller
         }
 
         try {
-             $dob = $request->dob ? \DateTime::createFromFormat('d/m/Y', $request->dob)->format('Y-m-d') : null;
+            // <<< SỬA Ở ĐÂY
+             $dob = $request->date_of_birth ? \DateTime::createFromFormat('d/m/Y', $request->date_of_birth)->format('Y-m-d') : null;
 
             $lecturer = User::create([
                 'name' => $request->name,
@@ -57,14 +55,12 @@ class LecturerController extends Controller
                 'password' => Hash::make($request->password),
                 'department_id' => $request->department_id,
                 'phone_number' => $request->phone_number,
-                'dob' => $dob,
-                'role' => 'teacher', // Gán vai trò là giảng viên
+                'date_of_birth' => $dob, // <<< SỬA Ở ĐÂY
+                'role' => 'teacher', 
             ]);
 
-            // Trả về dữ liệu giảng viên vừa tạo kèm thông tin khoa
             $lecturer->load('department');
-
-            return response()->json($lecturer, 201); // 201 Created
+            return response()->json($lecturer, 201); 
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Lỗi khi thêm giảng viên: ' . $e->getMessage()], 500);
@@ -74,13 +70,9 @@ class LecturerController extends Controller
 
     /**
      * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
-        // Tùy chọn: có thể triển khai hàm này để lấy chi tiết 1 giảng viên
         try {
             $lecturer = User::with('department')->findOrFail($id);
             return response()->json($lecturer, 200);
@@ -91,22 +83,17 @@ class LecturerController extends Controller
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        // <<< THAY THẾ TOÀN BỘ HÀM NÀY
          $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            // Kiểm tra email duy nhất, nhưng bỏ qua chính user đang sửa
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
             'user_code' => 'required|string|max:255|unique:users,user_code,' . $id,
             'department_id' => 'required|integer|exists:departments,id',
             'phone_number' => 'nullable|string',
-            'dob' => 'nullable|date_format:d/m/Y',
+            // <<< SỬA Ở ĐÂY
+            'date_of_birth' => 'nullable|date_format:d/m/Y',
         ]);
 
         if ($validator->fails()) {
@@ -115,7 +102,8 @@ class LecturerController extends Controller
 
         try {
             $lecturer = User::findOrFail($id);
-            $dob = $request->dob ? \DateTime::createFromFormat('d/m/Y', $request->dob)->format('Y-m-d') : null;
+            // <<< SỬA Ở ĐÂY
+            $dob = $request->date_of_birth ? \DateTime::createFromFormat('d/m/Y', $request->date_of_birth)->format('Y-m-d') : null;
 
             $lecturer->update([
                 'name' => $request->name,
@@ -123,7 +111,7 @@ class LecturerController extends Controller
                 'user_code' => $request->user_code,
                 'department_id' => $request->department_id,
                 'phone_number' => $request->phone_number,
-                'dob' => $dob,
+                'date_of_birth' => $dob, // <<< SỬA Ở ĐÂY
             ]);
 
             $lecturer->load('department');
@@ -136,21 +124,13 @@ class LecturerController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
-        // <<< THAY THẾ TOÀN BỘ HÀM NÀY
         try {
             $lecturer = User::findOrFail($id);
             $lecturer->delete();
-            // 204 No Content là response chuẩn cho việc xóa thành công mà không cần trả về body
-            // return response()->noContent();
-            // Hoặc trả về message để dễ debug ở frontend
             return response()->json(['message' => 'Xóa giảng viên thành công'], 200);
-
         } catch (\Exception $e) {
             return response()->json(['message' => 'Lỗi khi xóa giảng viên'], 500);
         }
