@@ -4,93 +4,162 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
-// 👇 *** THÊM CÁC DÒNG NÀY ***
 use App\Models\Schedule; // Import model Schedule
-use App\Models\User;     // (Giữ lại nếu các hàm khác cần)
-use Carbon\Carbon;       // (Giữ lại nếu các hàm khác cần)
-// 👆 *** KẾT THÚC THÊM ***
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator; // Thêm trình xác thực
 
 class ScheduleController extends Controller
 {
     /**
-     * @OA\Get(
-     * path="/api/schedules",
-     * operationId="getSchedulesList",
-     * tags={"Schedules (CRUD)"},
-     * summary="Lấy danh sách Lịch học", // Sửa summary
-     * security={{"bearerAuth":{}}},
-     * @OA\Response(
-     * response=200,
-     * description="Thành công, trả về danh sách lịch học", // Sửa description
-     * @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Schedule")) // Tham chiếu đến Schema (nếu có)
-     * ),
-     * @OA\Response(response=401, description="Chưa xác thực")
-     * )
+     * Lấy danh sách Lịch học (ĐÃ SỬA)
      */
-    public function index()
+public function index()
     {
-        // --- 👇 BẮT ĐẦU TRIỂN KHAI ---
-        // Lấy tất cả lịch học và load các quan hệ cần thiết cho Frontend
-        // Dựa vào model Schedule.fromJson của bạn, chúng ta cần:
-        // - room
-        // - classCourseAssignment.teacher
-        // - classCourseAssignment.classModel
-        // - classCourseAssignment.course
+        // 1. Tải lịch học CÙNG VỚI các quan hệ
         $schedules = Schedule::with([
-            'room', // Tải thông tin phòng học
-            'classCourseAssignment.teacher',  // Tải thông tin giảng viên qua bảng trung gian
-            'classCourseAssignment.classModel', // Tải thông tin lớp học qua bảng trung gian
-            'classCourseAssignment.course'    // Tải thông tin học phần qua bảng trung gian
+            'room', // Tải thông tin phòng
+            'classCourseAssignment.teacher',  // Tải GV
+            'classCourseAssignment.classModel', // Tải Lớp
+            'classCourseAssignment.course'    // Tải Học phần
         ])
-        ->orderBy('date', 'asc') // Sắp xếp theo ngày (tùy chọn)
-        ->orderBy('session', 'asc') // Sắp xếp theo tiết (tùy chọn)
-        ->get(); // Lấy tất cả (Cân nhắc dùng ->paginate(50) nếu dữ liệu lớn)
+        ->orderBy('created_at', 'desc') // Sắp xếp mới nhất lên đầu
+        ->get();
 
-        // Trả về dữ liệu dưới dạng JSON
-        return response()->json($schedules);
-        // --- 👆 KẾT THÚC TRIỂN KHAI ---
+        // 2. Ánh xạ (map) dữ liệu sang định dạng Flutter mong muốn
+        $formattedSchedules = $schedules->map(function ($schedule) {
+            
+            $assignment = $schedule->classCourseAssignment;
+            $teacherName = $assignment?->teacher?->name ?? 'N/A';
+            $classCode   = $assignment?->classModel?->name ?? 'N/A';
+            $courseName  = $assignment?->course?->name ?? 'N/A';
+            $semester    = $assignment?->semester ?? 'N/A'; 
+            $roomName    = $schedule->room?->name ?? 'N/A';
+
+            return [
+                'id' => $schedule->id, // Quan trọng cho Sửa/Xóa
+                
+                // Các key Flutter mong đợi cho Bảng (DataTable)
+                'teacherName' => $teacherName,
+                'classCode'   => $classCode,
+                'courseName'  => $courseName,
+                'semester'    => $semester,
+                'roomName'    => $roomName,
+
+                // Gửi thêm ID + Dữ liệu gốc để Form 'Sửa' có thể chọn giá trị mặc định
+                'room_id' => $schedule->room_id,
+                'class_course_assignment_id' => $schedule->class_course_assignment_id,
+                'date' => $schedule->date->toDateString(), // Gửi ngày (Y-m-d)
+                'session' => $schedule->session,         // Gửi ca học
+            ];
+        });
+
+        return response()->json($formattedSchedules);
     }
 
     /**
-     * @OA\Post(...) // Các hàm khác giữ nguyên (chưa triển khai)
+     * Tạo mới lịch học (ĐÃ SỬA)
      */
     public function store(Request $request)
     {
-        // ... (Chưa triển khai)
+        // 1. Validate các ID mà Flutter gửi lên
+        $validator = Validator::make($request->all(), [
+            'class_course_assignment_id' => 'required|exists:class_course_assignments,id',
+            'room_id' => 'required|exists:rooms,id',
+            'date' => 'required|date_format:Y-m-d', // Flutter phải gửi Y-m-d
+            'session' => 'required|string|max:255',
+            'status' => 'nullable|string', 
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Dữ liệu không hợp lệ', 'errors' => $validator->errors()], 422);
+        }
+
+        // 2. Tạo bản ghi
+        try {
+            $dataToCreate = $validator->validated();
+            if(empty($dataToCreate['status'])) {
+                $dataToCreate['status'] = 'scheduled'; // Gán giá trị mặc định
+            }
+            
+            $schedule = Schedule::create($dataToCreate);
+            
+            // Trả về rỗng (vì api_service.dart của bạn là Future<void>)
+            return response()->json(null, 201); // Created
+            
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi máy chủ khi tạo: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
-     * @OA\Get(...) // Các hàm khác giữ nguyên (chưa triển khai)
+     * Lấy 1 lịch học
      */
     public function show(string $id)
     {
-        // ... (Chưa triển khai)
+        $schedule = Schedule::with(['room', 'classCourseAssignment.teacher'])->find($id);
+        if (!$schedule) {
+            return response()->json(['message' => 'Không tìm thấy lịch học'], 404);
+        }
+        // (Lưu ý: Bạn có thể cần map dữ liệu ở đây nếu Flutter cần)
+        return response()->json($schedule);
     }
 
     /**
-     * @OA\Put(...) // Các hàm khác giữ nguyên (chưa triển khai)
+     * Cập nhật lịch học (ĐÃ SỬA)
      */
     public function update(Request $request, string $id)
     {
-        // ... (Chưa triển khai)
+        // 1. Tìm bản ghi
+        $schedule = Schedule::find($id);
+        if (!$schedule) {
+            return response()->json(['message' => 'Không tìm thấy lịch học'], 404);
+        }
+
+        // 2. Validate
+        $validator = Validator::make($request->all(), [
+            'class_course_assignment_id' => 'required|exists:class_course_assignments,id',
+            'room_id' => 'required|exists:rooms,id',
+            'date' => 'required|date_format:Y-m-d',
+            'session' => 'required|string|max:255',
+            'status' => 'nullable|string', 
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Dữ liệu không hợp lệ', 'errors' => $validator->errors()], 422);
+        }
+        
+        // 3. Cập nhật
+        try {
+            $schedule->update($validator->validated());
+            
+            // Trả về rỗng (vì api_service.dart của bạn là Future<void>)
+            return response()->json(null, 200); // OK
+            
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi máy chủ khi cập nhật: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
-     * @OA\Delete(...) // Các hàm khác giữ nguyên (chưa triển khai)
+     * Xóa lịch học
      */
     public function destroy(string $id)
     {
-        // ... (Chưa triển khai)
+        $schedule = Schedule::find($id);
+        if (!$schedule) {
+            return response()->json(['message' => 'Không tìm thấy lịch học'], 404);
+        }
+        $schedule->delete();
+        return response()->json(null, 200);
     }
 
-    // --- CÁC HÀM API KHÁC (getSchedulesByDateForTeacher, getAvailableSchedulesForLeave) ---
-    // Giữ nguyên các hàm này nếu chúng đã hoạt động đúng
-    // ...
+    // --- CÁC HÀM API KHÁC (Giữ nguyên) ---
     public function getSchedulesByDateForTeacher(Request $request, User $user)
     {
-        // ... (Giữ nguyên code hiện tại của bạn)
+         // (Hàm này đã đúng, giữ nguyên code cũ của bạn)
          $request->validate(['date' => 'required|date_format:Y-m-d']);
+         // ... (phần còn lại của hàm)
          $date = Carbon::parse($request->query('date'));
          $schedules = Schedule::where('date', $date)
              ->whereHas('classCourseAssignment', function ($q) use ($user) {
@@ -112,8 +181,9 @@ class ScheduleController extends Controller
 
     public function getAvailableSchedulesForLeave(User $user)
     {
-        // ... (Giữ nguyên code hiện tại của bạn)
+         // (Hàm này đã đúng, giữ nguyên code cũ của bạn)
          $upcomingSchedules = Schedule::where('date', '>=', Carbon::tomorrow())
+             // ... (phần còn lại của hàm)
              ->where('status', 'scheduled')
              ->whereHas('classCourseAssignment', function ($q) use ($user) {
                  $q->where('teacher_id', $user->id);
@@ -136,5 +206,4 @@ class ScheduleController extends Controller
          });
          return response()->json($formatted);
     }
-
 }

@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-// 👇 THÊM DÒNG NÀY (để dùng Factory, theo chuẩn Laravel mới)
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Schedule extends Model
 {
-    // 👇 THÊM DÒNG NÀY
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     * (Chỉ chứa các cột có thật trong migration)
+     */
     protected $fillable = [
         'class_course_assignment_id',
         'room_id',
@@ -21,15 +23,13 @@ class Schedule extends Model
     ];
 
     /**
-     * 💡 SỬA LỖI:
-     * Tự động chuyển đổi (cast) cột 'date' từ string thành đối tượng Carbon.
-     * Điều này cho phép bạn gọi các hàm như ->toDateString()
+     * Tự động cast cột 'date' thành đối tượng Carbon.
      */
     protected $casts = [
-        'date' => 'date', // 👈 THÊM DÒNG NÀY
+        'date' => 'date',
     ];
 
-    // --- (Các hàm quan hệ bên dưới đã đúng, giữ nguyên) ---
+    // --- Các hàm quan hệ (Giữ nguyên) ---
 
     public function classCourseAssignment(){
         return $this->belongsTo(ClassCourseAssignment::class, 'class_course_assignment_id');
