@@ -6,39 +6,53 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
- */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
+        $gender = $this->faker->randomElement(['male', 'female']);
+        $firstName = $gender === 'male' ? $this->faker->firstNameMale() : $this->faker->firstNameFemale();
+        $lastName = $this->faker->lastName();
+        
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'name' => $lastName . ' ' . $firstName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'password' => static::$password ??= Hash::make('password'), // Mật khẩu mặc định là 'password'
+            'phone_number' => $this->faker->unique()->phoneNumber(),
+            'gender' => $gender,
+            'date_of_birth' => $this->faker->date(),
+            'role' => 'student', // Mặc định là student
+            'status' => 'active',
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    // Định nghĩa một "state" (trạng thái) cho Teacher
+    public function teacher(): static
     {
         return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+            'role' => 'teacher',
+        ]);
+    }
+
+    // Định nghĩa state cho Trưởng khoa
+    public function headOfDepartment(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'head_of_department',
+        ]);
+    }
+    
+    // Định nghĩa state cho Giáo vụ
+    public function trainingOffice(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'training_office',
         ]);
     }
 }
