@@ -24,8 +24,8 @@
 **DUC 
 chạy lệnh tạo bảng r sinh dữ liệu đb mới nhé
 
-php artisan make:migration add_description_to_divisions_table --table=divisions
-php artisan make:migration add_division_id_to_courses_table --table=courses
 php artisan make:migration create_divisions_table --create=divisions
 php artisan make:migration create_majors_table --create=majors
 php artisan make:migration add_foreign_keys_to_users_table --table=users
+php artisan make:migration add_division_id_to_courses_table --table=courses
+php artisan make:migration add_description_to_divisions_table --table=divisions
