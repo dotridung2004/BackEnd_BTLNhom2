@@ -1362,4 +1362,149 @@ VALUES (501, 2001); -- Gán SV 2001 vào Lớp 501
 INSERT IGNORE INTO `schedules` (id, class_course_assignment_id, room_id, `date`, `session`, `status`) 
 VALUES 
 (701, 601, 101, '2025-10-22', 'Tiết 1-3 (Nhập môn LT)', 'scheduled'),
-(702, 601, 101, '2025-10-22', 'Tiết 4-6 (Nhập môn LT)', 'scheduled');
+(702, 601, 101, '2025-10-22', 'Tiết 4-6 (Nhập môn LT)', 'scheduled')
+
+
+
+
+
+--DUC
+-- Bước 1: Đặt division_id và major_id thành NULL cho tất cả các vai trò không phải là giảng viên (student, training_office).
+UPDATE `users`
+SET
+    `division_id` = NULL,
+    `major_id` = NULL
+WHERE
+    `role` = 'student' OR `role` = 'training_office';
+
+-- Bước 2: Gán giảng viên/trưởng BM vào Bộ môn/Ngành 1 (dựa trên các dòng bạn đánh dấu "11")
+-- (Giả sử ID 1 = CNPM)
+UPDATE `users`
+SET `division_id` = 1, `major_id` = 1
+WHERE `id` IN (3, 4, 9, 16, 17, 20, 22, 27, 28);
+
+-- Bước 3: Gán giảng viên/trưởng BM vào Bộ môn/Ngành 2 (dựa trên các dòng bạn đánh dấu "22")
+-- (Giả sử ID 2 = HTTT)
+UPDATE `users`
+SET `division_id` = 2, `major_id` = 2
+WHERE `id` IN (31, 32, 35, 36, 41, 42, 45, 47, 48);
+
+-- Bước 4: Gán giảng viên/trưởng BM vào Bộ môn/Ngành 3 (dựa trên các dòng bạn đánh dấu "33")
+-- (Giả sử ID 3 = KHMT)
+UPDATE `users`
+SET `division_id` = 3, `major_id` = 3
+WHERE `id` IN (51, 52, 53, 55, 56, 58, 59, 60, 65);
+
+-- Bước 5: Gán giảng viên/trưởng BM vào Bộ môn/Ngành 4 (dựa trên các dòng bạn đánh dấu "44")
+-- (Giả sử ID 4 = MMTTT)
+UPDATE `users`
+SET `division_id` = 4, `major_id` = 4
+WHERE `id` IN (69, 70, 73, 75, 76, 81, 84, 85, 86);
+
+-- Bước 6: Gán giảng viên/trưởng BM vào Bộ môn/Ngành 5 (dựa trên các dòng bạn đánh dấu "55")
+-- (Giả sử ID 5 = TTNT)
+UPDATE `users`
+SET `division_id` = 5, `major_id` = 5
+WHERE `id` IN (88, 89, 91, 92, 94, 97, 99, 100);
+INSERT INTO `divisions` (`code`, `name`, `department_id`, `description`, `created_at`, `updated_at`) VALUES
+('BM-CNPM', 'Bộ môn Công nghệ phần mềm', 25, 'Mô tả chi tiết về Bộ môn Công nghệ phần mềm.', NOW(), NOW()),
+('BM-HTTT', 'Bộ môn Hệ thống thông tin', 57, 'Mô tả chi tiết về Bộ môn Hệ thống thông tin.', NOW(), NOW()),
+('BM-KHMT', 'Bộ môn Khoa học máy tính', 72, 'Mô tả chi tiết về Bộ môn Khoa học máy tính.', NOW(), NOW()),
+('BM-MMTTT', 'Bộ môn Mạng máy tính và Truyền thông', 79, 'Mô tả chi tiết về Bộ môn Mạng máy tính và Truyền thông.', NOW(), NOW()),
+('BM-TTNT', 'Bộ môn Trí tuệ nhân tạo', 94, 'Mô tả chi tiết về Bộ môn Trí tuệ nhân tạo.', NOW(), NOW()),
+('BM-THUD', 'Bộ môn Tin học Ứng dụng', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng.', NOW(), NOW()),
+('BM-TGMT', 'Bộ môn Thị giác máy tính', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính.', NOW(), NOW()),
+('BM-XLNN', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên.', NOW(), NOW()),
+('BM-THKT', 'Bộ môn Tin học Kinh tế', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế.', NOW(), NOW()),
+('BM-QTM', 'Bộ môn Quản trị Mạng', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng.', NOW(), NOW()),
+('BM-CTTT2', 'Bộ môn Công nghệ Tri thức 2', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 2.', NOW(), NOW()),
+('BM-ATTT2', 'Bộ môn An toàn thông tin 2', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 2.', NOW(), NOW()),
+('BM-KTMT2', 'Bộ môn Kỹ thuật máy tính 2', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 2.', NOW(), NOW()),
+('BM-TTVDL2', 'Bộ môn Truyền thông và Dữ liệu 2', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 2.', NOW(), NOW()),
+('BM-TTNM2', 'Bộ môn Tương tác Người-Máy 2', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 2.', NOW(), NOW()),
+('BM-THUD2', 'Bộ môn Tin học Ứng dụng 2', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 2.', NOW(), NOW()),
+('BM-TGMT2', 'Bộ môn Thị giác máy tính 2', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 2.', NOW(), NOW()),
+('BM-XLNN2', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 2', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 2.', NOW(), NOW()),
+('BM-THKT2', 'Bộ môn Tin học Kinh tế 2', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 2.', NOW(), NOW()),
+('BM-QTM2', 'Bộ môn Quản trị Mạng 2', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 2.', NOW(), NOW()),
+('BM-CTTT3', 'Bộ môn Công nghệ Tri thức 3', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 3.', NOW(), NOW()),
+('BM-ATTT3', 'Bộ môn An toàn thông tin 3', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 3.', NOW(), NOW()),
+('BM-KTMT3', 'Bộ môn Kỹ thuật máy tính 3', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 3.', NOW(), NOW()),
+('BM-TTVDL3', 'Bộ môn Truyền thông và Dữ liệu 3', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 3.', NOW(), NOW()),
+('BM-TTNM3', 'Bộ môn Tương tác Người-Máy 3', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 3.', NOW(), NOW()),
+('BM-THUD3', 'Bộ môn Tin học Ứng dụng 3', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 3.', NOW(), NOW()),
+('BM-TGMT3', 'Bộ môn Thị giác máy tính 3', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 3.', NOW(), NOW()),
+('BM-XLNN3', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 3', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 3.', NOW(), NOW()),
+('BM-THKT3', 'Bộ môn Tin học Kinh tế 3', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 3.', NOW(), NOW()),
+('BM-QTM3', 'Bộ môn Quản trị Mạng 3', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 3.', NOW(), NOW()),
+('BM-CTTT4', 'Bộ môn Công nghệ Tri thức 4', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 4.', NOW(), NOW()),
+('BM-ATTT4', 'Bộ môn An toàn thông tin 4', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 4.', NOW(), NOW()),
+('BM-KTMT4', 'Bộ môn Kỹ thuật máy tính 4', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 4.', NOW(), NOW()),
+('BM-TTVDL4', 'Bộ môn Truyền thông và Dữ liệu 4', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 4.', NOW(), NOW()),
+('BM-TTNM4', 'Bộ môn Tương tác Người-Máy 4', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 4.', NOW(), NOW()),
+('BM-THUD4', 'Bộ môn Tin học Ứng dụng 4', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 4.', NOW(), NOW()),
+('BM-TGMT4', 'Bộ môn Thị giác máy tính 4', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 4.', NOW(), NOW()),
+('BM-XLNN4', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 4', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 4.', NOW(), NOW()),
+('BM-THKT4', 'Bộ môn Tin học Kinh tế 4', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 4.', NOW(), NOW()),
+('BM-QTM4', 'Bộ môn Quản trị Mạng 4', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 4.', NOW(), NOW()),
+('BM-CTTT5', 'Bộ môn Công nghệ Tri thức 5', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 5.', NOW(), NOW()),
+('BM-ATTT5', 'Bộ môn An toàn thông tin 5', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 5.', NOW(), NOW()),
+('BM-KTMT5', 'Bộ môn Kỹ thuật máy tính 5', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 5.', NOW(), NOW()),
+('BM-TTVDL5', 'Bộ môn Truyền thông và Dữ liệu 5', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 5.', NOW(), NOW()),
+('BM-TTNM5', 'Bộ môn Tương tác Người-Máy 5', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 5.', NOW(), NOW()),
+('BM-THUD5', 'Bộ môn Tin học Ứng dụng 5', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 5.', NOW(), NOW()),
+('BM-TGMT5', 'Bộ môn Thị giác máy tính 5', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 5.', NOW(), NOW()),
+('BM-XLNN5', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 5', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 5.', NOW(), NOW()),
+('BM-THKT5', 'Bộ môn Tin học Kinh tế 5', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 5.', NOW(), NOW()),
+('BM-QTM5', 'Bộ môn Quản trị Mạng 5', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 5.', NOW(), NOW()),
+('BM-CTTT6', 'Bộ môn Công nghệ Tri thức 6', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 6.', NOW(), NOW()),
+('BM-ATTT6', 'Bộ môn An toàn thông tin 6', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 6.', NOW(), NOW()),
+('BM-KTMT6', 'Bộ môn Kỹ thuật máy tính 6', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 6.', NOW(), NOW()),
+('BM-TTVDL6', 'Bộ môn Truyền thông và Dữ liệu 6', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 6.', NOW(), NOW()),
+('BM-TTNM6', 'Bộ môn Tương tác Người-Máy 6', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 6.', NOW(), NOW()),
+('BM-THUD6', 'Bộ môn Tin học Ứng dụng 6', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 6.', NOW(), NOW()),
+('BM-TGMT6', 'Bộ môn Thị giác máy tính 6', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 6.', NOW(), NOW()),
+('BM-XLNN6', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 6', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 6.', NOW(), NOW()),
+('BM-THKT6', 'Bộ môn Tin học Kinh tế 6', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 6.', NOW(), NOW()),
+('BM-QTM6', 'Bộ môn Quản trị Mạng 6', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 6.', NOW(), NOW()),
+('BM-CTTT7', 'Bộ môn Công nghệ Tri thức 7', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 7.', NOW(), NOW()),
+('BM-ATTT7', 'Bộ môn An toàn thông tin 7', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 7.', NOW(), NOW()),
+('BM-KTMT7', 'Bộ môn Kỹ thuật máy tính 7', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 7.', NOW(), NOW()),
+('BM-TTVDL7', 'Bộ môn Truyền thông và Dữ liệu 7', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 7.', NOW(), NOW()),
+('BM-TTNM7', 'Bộ môn Tương tác Người-Máy 7', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 7.', NOW(), NOW()),
+('BM-THUD7', 'Bộ môn Tin học Ứng dụng 7', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 7.', NOW(), NOW()),
+('BM-TGMT7', 'Bộ môn Thị giác máy tính 7', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 7.', NOW(), NOW()),
+('BM-XLNN7', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 7', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 7.', NOW(), NOW()),
+('BM-THKT7', 'Bộ môn Tin học Kinh tế 7', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 7.', NOW(), NOW()),
+('BM-QTM7', 'Bộ môn Quản trị Mạng 7', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 7.', NOW(), NOW()),
+('BM-CTTT8', 'Bộ môn Công nghệ Tri thức 8', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 8.', NOW(), NOW()),
+('BM-ATTT8', 'Bộ môn An toàn thông tin 8', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 8.', NOW(), NOW()),
+('BM-KTMT8', 'Bộ môn Kỹ thuật máy tính 8', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 8.', NOW(), NOW()),
+('BM-TTVDL8', 'Bộ môn Truyền thông và Dữ liệu 8', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 8.', NOW(), NOW()),
+('BM-TTNM8', 'Bộ môn Tương tác Người-Máy 8', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 8.', NOW(), NOW()),
+('BM-THUD8', 'Bộ môn Tin học Ứng dụng 8', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 8.', NOW(), NOW()),
+('BM-TGMT8', 'Bộ môn Thị giác máy tính 8', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 8.', NOW(), NOW()),
+('BM-XLNN8', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 8', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 8.', NOW(), NOW()),
+('BM-THKT8', 'Bộ môn Tin học Kinh tế 8', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 8.', NOW(), NOW()),
+('BM-QTM8', 'Bộ môn Quản trị Mạng 8', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 8.', NOW(), NOW()),
+('BM-CTTT9', 'Bộ môn Công nghệ Tri thức 9', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 9.', NOW(), NOW()),
+('BM-ATTT9', 'Bộ môn An toàn thông tin 9', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 9.', NOW(), NOW()),
+('BM-KTMT9', 'Bộ môn Kỹ thuật máy tính 9', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 9.', NOW(), NOW()),
+('BM-TTVDL9', 'Bộ môn Truyền thông và Dữ liệu 9', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 9.', NOW(), NOW()),
+('BM-TTNM9', 'Bộ môn Tương tác Người-Máy 9', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 9.', NOW(), NOW()),
+('BM-THUD9', 'Bộ môn Tin học Ứng dụng 9', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 9.', NOW(), NOW()),
+('BM-TGMT9', 'Bộ môn Thị giác máy tính 9', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 9.', NOW(), NOW()),
+('BM-XLNN9', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 9', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 9.', NOW(), NOW()),
+('BM-THKT9', 'Bộ môn Tin học Kinh tế 9', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 9.', NOW(), NOW()),
+('BM-QTM9', 'Bộ môn Quản trị Mạng 9', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 9.', NOW(), NOW()),
+('BM-CTTT10', 'Bộ môn Công nghệ Tri thức 10', 25, 'Mô tả chi tiết về Bộ môn Công nghệ Tri thức 10.', NOW(), NOW()),
+('BM-ATTT10', 'Bộ môn An toàn thông tin 10', 57, 'Mô tả chi tiết về Bộ môn An toàn thông tin 10.', NOW(), NOW()),
+('BM-KTMT10', 'Bộ môn Kỹ thuật máy tính 10', 72, 'Mô tả chi tiết về Bộ môn Kỹ thuật máy tính 10.', NOW(), NOW()),
+('BM-TTVDL10', 'Bộ môn Truyền thông và Dữ liệu 10', 79, 'Mô tả chi tiết về Bộ môn Truyền thông và Dữ liệu 10.', NOW(), NOW()),
+('BM-TTNM10', 'Bộ môn Tương tác Người-Máy 10', 94, 'Mô tả chi tiết về Bộ môn Tương tác Người-Máy 10.', NOW(), NOW()),
+('BM-THUD10', 'Bộ môn Tin học Ứng dụng 10', 25, 'Mô tả chi tiết về Bộ môn Tin học Ứng dụng 10.', NOW(), NOW()),
+('BM-TGMT10', 'Bộ môn Thị giác máy tính 10', 57, 'Mô tả chi tiết về Bộ môn Thị giác máy tính 10.', NOW(), NOW()),
+('BM-XLNN10', 'Bộ môn Xử lý Ngôn ngữ Tự nhiên 10', 72, 'Mô tả chi tiết về Bộ môn Xử lý Ngôn ngữ Tự nhiên 10.', NOW(), NOW()),
+('BM-THKT10', 'Bộ môn Tin học Kinh tế 10', 79, 'Mô tả chi tiết về Bộ môn Tin học Kinh tế 10.', NOW(), NOW()),
+('BM-QTM10', 'Bộ môn Quản trị Mạng 10', 94, 'Mô tả chi tiết về Bộ môn Quản trị Mạng 10.', NOW(), NOW());
+
