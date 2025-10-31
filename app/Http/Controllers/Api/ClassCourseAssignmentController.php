@@ -4,16 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\ClassCourseAssignment;
+use App\Models\ClassCourseAssignment; // Đã import model
+
 class ClassCourseAssignmentController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * (Hàm này lấy từ file thứ 2 - đã format cho Flutter)
      */
     public function index()
-{
-        // 👈 THÊM LOGIC NÀY
-        
+    {
         // 1. Tải tất cả các phân công, cùng với quan hệ
         $assignments = ClassCourseAssignment::with(['teacher', 'course', 'classModel'])
             ->get();
@@ -40,6 +40,25 @@ class ClassCourseAssignmentController extends Controller
 
         return response()->json($formatted);
     }
+
+    /**
+     * Display a listing of the resource with student count.
+     * (Hàm này lấy từ file thứ 1 - dùng cho màn hình "Học phần đã đăng ký")
+     */
+    public function indexWithStudentCount()
+    {
+        // 'withCount('students')' sẽ tự động thêm cột 'students_count'
+        // Đảm bảo bạn có quan hệ tên 'students' trong Model ClassCourseAssignment
+        $assignments = ClassCourseAssignment::with([
+            'teacher',
+            'course'
+        ])
+        ->withCount('students') 
+        ->get();
+
+        return response()->json($assignments);
+    }
+
 
     /**
      * Store a newly created resource in storage.

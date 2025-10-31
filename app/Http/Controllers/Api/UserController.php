@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request; // 👈 *** ĐẢM BẢO CÓ DÒNG NÀY ***
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Models\Schedule;
@@ -12,17 +12,33 @@ use Carbon\Carbon;
 use App\Models\LeaveRequest;
 use App\Models\MakeupClass;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth; // 👈 *** THÊM DÒNG NÀY ***
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+    // 👇 ================== PHẦN ĐÃ SỬA ĐỔI ================== 👇
+
     /**
      * @OA\Get(
      * path="/api/users",
      * operationId="getUsersList",
      * tags={"Users (CRUD)"},
-     * summary="Lấy danh sách người dùng (phân trang 50)",
+     * summary="Lấy danh sách người dùng (tìm kiếm, sắp xếp và phân trang 10)",
      * security={{"bearerAuth":{}}},
+     * @OA\Parameter(
+     * name="page",
+     * in="query",
+     * required=false,
+     * description="Số trang cần lấy",
+     * @OA\Schema(type="integer")
+     * ),
+     * @OA\Parameter(
+     * name="name",
+     * in="query",
+     * required=false,
+     * description="Tên người dùng cần tìm kiếm",
+     * @OA\Schema(type="string")
+     * ),
      * @OA\Response(
      * response=200,
      * description="Thành công",
@@ -30,11 +46,28 @@ class UserController extends Controller
      * )
      * )
      */
-    public function index()
+    public function index(Request $request) // 👈 SỬA 1: Thêm Request $request
     {
-        $users = User::paginate(50);
+        // SỬA 2: Lấy từ khóa tìm kiếm
+        $searchQuery = $request->input('name');
+
+        // SỬA 3: Bắt đầu xây dựng câu truy vấn
+        $query = User::query();
+
+        // SỬA 4: Thêm điều kiện lọc 'where' NẾU có từ khóa tìm kiếm
+        $query->when($searchQuery, function ($q) use ($searchQuery) {
+            // Sử dụng "where" với "like" để tìm kiếm gần đúng
+            return $q->where('name', 'like', '%' . $searchQuery . '%');
+        });
+
+        // SỬA 5: Sắp xếp và phân trang (dùng 10 cho nhất quán với UI)
+        $users = $query->latest()->paginate(10);
+
         return response()->json($users, 200);
     }
+
+    // 👆 ================== KẾT THÚC PHẦN SỬA ĐỔI ================== 👆
+
 
     /**
      * @OA\Post(

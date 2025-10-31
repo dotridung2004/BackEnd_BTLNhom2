@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\LeaveRequestController;
 use App\Http\Controllers\Api\MakeupClassController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\LecturerController; // <<< 1. THÊM IMPORT
 // Tự động tạo các route cho CRUD: GET, POST, PUT, DELETE,...
 Route::apiResource('users', UserController::class);
 Route::apiResource('attendances', AttendanceController::class);
@@ -24,6 +25,7 @@ Route::apiResource('leaverequests', LeaveRequestController::class);
 Route::apiResource('makeupclasses', MakeupClassController::class);
 Route::apiResource('rooms', RoomController::class);
 Route::apiResource('schedules', ScheduleController::class);
+Route::apiResource('lecturers', LecturerController::class); // <<< 2. THÊM ROUTE
 Route::post('login', [AuthController::class, 'login']);
 Route::get('/users/{user}/home-summary', [UserController::class, 'getHomeSummary']);
 Route::get('/users/{user}/schedule-data', [UserController::class, 'getScheduleData']);
