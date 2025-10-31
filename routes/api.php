@@ -22,7 +22,13 @@ Route::apiResource('attendances', AttendanceController::class);
 Route::apiResource('class-courses', ClassCourseAssignmentController::class);
 Route::apiResource('classmodels', ClassModelController::class);
 Route::apiResource('courses', CourseController::class);
+
+// 👇 **** BẮT ĐẦU SỬA ĐỔI **** 👇
+// (Đặt route chi tiết LÊN TRÊN route resource)
+Route::get('/departments/{id}/details', [DepartmentController::class, 'getDetails']);
 Route::apiResource('departments', DepartmentController::class);
+// 👆 **** KẾT THÚC SỬA ĐỔI **** 👆
+
 Route::apiResource('leaverequests', LeaveRequestController::class);
 Route::apiResource('makeupclasses', MakeupClassController::class);
 Route::apiResource('rooms', RoomController::class);
@@ -34,6 +40,9 @@ Route::post('login', [AuthController::class, 'login']);
 Route::get('/users/{user}/home-summary', [UserController::class, 'getHomeSummary']);
 Route::get('/users/{user}/schedule-data', [UserController::class, 'getScheduleData']);
 Route::get('/users/{user}/report-data', [UserController::class, 'getReportData']);
+
+// (Đã xóa dòng /departments/{id}/details ở đây vì đã dời lên trên)
+
 // Lấy danh sách sinh viên + điểm danh cho lịch dạy cụ thể theo ngày
 Route::get('/schedules/{schedule}/students-attendance', [AttendanceController::class, 'getStudentsAndAttendance']);
 // Lưu/Cập nhật điểm danh hàng loạt
