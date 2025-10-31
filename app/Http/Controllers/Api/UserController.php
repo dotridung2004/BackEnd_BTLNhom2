@@ -30,6 +30,13 @@ class UserController extends Controller
      * description="Số trang cần lấy",
      * @OA\Schema(type="integer")
      * ),
+     * @OA\Parameter(
+     * name="name",
+     * in="query",
+     * required=false,
+     * description="Tên người dùng cần tìm kiếm",
+     * @OA\Schema(type="string")
+     * ),
      * @OA\Response(
      * response=200,
      * description="Thành công",
@@ -37,13 +44,25 @@ class UserController extends Controller
      * )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
-        // 👇 ĐÂY LÀ DÒNG ĐÃ SỬA LẠI
-        // Dùng latest() để sắp xếp theo 'created_at' giảm dần (mới nhất trước).
-        // Dùng paginate(10) để lấy 10 mục mỗi trang.
-        $users = User::latest()->paginate(10); 
-        
+        // Lấy từ khóa tìm kiếm từ request.
+        $searchQuery = $request->input('name');
+
+        // Bắt đầu xây dựng câu truy vấn
+        $query = User::query();
+
+        // Thêm điều kiện lọc vào câu truy vấn NẾU có từ khóa tìm kiếm
+        // Giả sử tên người dùng được lưu trong cột 'name'.
+        $query->when($searchQuery, function ($q) use ($searchQuery) {
+            // Sử dụng "where" với "like" để tìm kiếm gần đúng
+            // Dấu % ở trước và sau cho phép tìm kiếm bất kỳ vị trí nào trong chuỗi
+            return $q->where('name', 'like', '%' . $searchQuery . '%');
+        });
+
+        // Sắp xếp theo ngày tạo mới nhất (mới nhất lên đầu) và phân trang 10 mục
+        $users = $query->latest()->paginate(10);
+
         return response()->json($users, 200);
     }
 
@@ -254,407 +273,407 @@ class UserController extends Controller
     // (Toàn bộ các hàm getHomeSummary, getScheduleData,... đều được giữ nguyên)
     // ...
      public function getHomeSummary(User $user)
-    {
-        $today = Carbon::today();
-        $now = Carbon::now();
+     {
+         $today = Carbon::today();
+         $now = Carbon::now();
 
-        $todaySchedulesQuery = Schedule::where('date', $today)
-            ->whereHas('classCourseAssignment', function ($query) use ($user) {
-                $query->where('teacher_id', $user->id);
-            })
-            ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel'])
-            ->orderBy('session', 'asc');
+         $todaySchedulesQuery = Schedule::where('date', $today)
+             ->whereHas('classCourseAssignment', function ($query) use ($user) {
+                 $query->where('teacher_id', $user->id);
+             })
+             ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel'])
+             ->orderBy('session', 'asc');
 
-        $schedules = $todaySchedulesQuery->get();
+         $schedules = $todaySchedulesQuery->get();
 
-        $todayLessonsCount = $schedules->count();
+         $todayLessonsCount = $schedules->count();
 
-        $startOfWeek = $today->copy()->startOfWeek();
-        $endOfWeek = $today->copy()->endOfWeek();
+         $startOfWeek = $today->copy()->startOfWeek();
+         $endOfWeek = $today->copy()->endOfWeek();
 
-        $weekLessonsCount = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
-            ->whereHas('classCourseAssignment', function ($query) use ($user) {
-                $query->where('teacher_id', $user->id);
-            })
-            ->count();
+         $weekLessonsCount = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
+             ->whereHas('classCourseAssignment', function ($query) use ($user) {
+                 $query->where('teacher_id', $user->id);
+             })
+             ->count();
 
-        $completionPercent = 0.0; // Placeholder
+         $completionPercent = 0.0; // Placeholder
 
-        $formattedSchedules = $schedules->map(function ($schedule) use ($now) {
-            $location = $schedule->room?->location ?? 'N/A';
-            $roomName = $schedule->room?->name ?? 'N/A';
-            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
-            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
-            $status = $schedule->status; // (Nên có logic tính 'Đang diễn ra')
+         $formattedSchedules = $schedules->map(function ($schedule) use ($now) {
+             $location = $schedule->room?->location ?? 'N/A';
+             $roomName = $schedule->room?->name ?? 'N/A';
+             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+             $status = $schedule->status; // (Nên có logic tính 'Đang diễn ra')
 
-            return [
-                'id' => $schedule->id,
-                'time_range' => $schedule->session,
-                'lessons' => $schedule->session,
-                'title' => $courseName,
-                'course_code' => "({$classCode})",
-                'location' => "{$roomName} - {$location}",
-                'status' => $status,
-            ];
-        });
+             return [
+                 'id' => $schedule->id,
+                 'time_range' => $schedule->session,
+                 'lessons' => $schedule->session,
+                 'title' => $courseName,
+                 'course_code' => "({$classCode})",
+                 'location' => "{$roomName} - {$location}",
+                 'status' => $status,
+             ];
+         });
 
-        return response()->json([
-            'summary' => [
-                'today_lessons' => $todayLessonsCount,
-                'week_lessons' => $weekLessonsCount,
-                'completion_percent' => $completionPercent,
-            ],
-            'today_schedules' => $formattedSchedules,
-        ]);
-    }
-    
-    public function getScheduleData(Request $request, User $user)
-    {
-        $weekOffset = (int)$request->query('week_offset', 0);
-        $today = Carbon::today();
-        $startOfWeek = $today->copy()->addWeeks($weekOffset)->startOfWeek();
+         return response()->json([
+             'summary' => [
+                 'today_lessons' => $todayLessonsCount,
+                 'week_lessons' => $weekLessonsCount,
+                 'completion_percent' => $completionPercent,
+             ],
+             'today_schedules' => $formattedSchedules,
+         ]);
+     }
 
-        $todaySchedules = $this->getSchedulesForDates($user, [Carbon::today()]);
-        $todayData = [
-            'day_number' => $today->format('d'),
-            'full_date_string' => $this->formatFullDateString($today),
-            'schedules' => $this->formatSchedules($todaySchedules, Carbon::now()),
-        ];
+     public function getScheduleData(Request $request, User $user)
+     {
+         $weekOffset = (int)$request->query('week_offset', 0);
+         $today = Carbon::today();
+         $startOfWeek = $today->copy()->addWeeks($weekOffset)->startOfWeek();
 
-        $weekDates = [];
-        $dateCursor = $startOfWeek->copy();
-        $todayIndex = 0;
-        for ($i = 0; $i < 7; $i++) {
-            $weekDates[] = [
-                'day_name' => $this->formatDayName($dateCursor),
-                'day_number' => $dateCursor->format('d'),
-                'full_date' => $dateCursor->toDateString(),
-                'full_date_string' => $this->formatFullDateString($dateCursor),
-            ];
-            if ($dateCursor->isSameDay(Carbon::today())) {
-                $todayIndex = $i;
-            }
-            $dateCursor->addDay();
-        }
+         $todaySchedules = $this->getSchedulesForDates($user, [Carbon::today()]);
+         $todayData = [
+             'day_number' => $today->format('d'),
+             'full_date_string' => $this->formatFullDateString($today),
+             'schedules' => $this->formatSchedules($todaySchedules, Carbon::now()),
+         ];
 
-        $endOfWeek = $startOfWeek->copy()->addDays(6);
-        $allWeekSchedules = $this->getSchedulesForDates($user, [$startOfWeek, $endOfWeek]);
+         $weekDates = [];
+         $dateCursor = $startOfWeek->copy();
+         $todayIndex = 0;
+         for ($i = 0; $i < 7; $i++) {
+             $weekDates[] = [
+                 'day_name' => $this->formatDayName($dateCursor),
+                 'day_number' => $dateCursor->format('d'),
+                 'full_date' => $dateCursor->toDateString(),
+                 'full_date_string' => $this->formatFullDateString($dateCursor),
+             ];
+             if ($dateCursor->isSameDay(Carbon::today())) {
+                 $todayIndex = $i;
+             }
+             $dateCursor->addDay();
+         }
 
-        $schedulesByDate = [];
-        foreach ($weekDates as $date) {
-            $schedulesByDate[$date['full_date']] = [];
-        }
+         $endOfWeek = $startOfWeek->copy()->addDays(6);
+         $allWeekSchedules = $this->getSchedulesForDates($user, [$startOfWeek, $endOfWeek]);
 
-        $formattedSchedulesMap = $allWeekSchedules->groupBy(function ($schedule) {
-            return $schedule->date->toDateString();
-        });
+         $schedulesByDate = [];
+         foreach ($weekDates as $date) {
+             $schedulesByDate[$date['full_date']] = [];
+         }
 
-        foreach ($formattedSchedulesMap as $dateKey => $schedules) {
-            if (isset($schedulesByDate[$dateKey])) {
-                $schedulesByDate[$dateKey] = $this->formatSchedules($schedules, Carbon::now());
-            }
-        }
+         $formattedSchedulesMap = $allWeekSchedules->groupBy(function ($schedule) {
+             return $schedule->date->toDateString();
+         });
 
-        $weekData = [
-            'dates' => $weekDates,
-            'today_index' => $todayIndex,
-            'schedules_by_date' => $schedulesByDate,
-        ];
+         foreach ($formattedSchedulesMap as $dateKey => $schedules) {
+             if (isset($schedulesByDate[$dateKey])) {
+                 $schedulesByDate[$dateKey] = $this->formatSchedules($schedules, Carbon::now());
+             }
+         }
 
-        return response()->json([
-            'today' => $todayData,
-            'week' => $weekData,
-        ]);
-    }
-    
-    public function getReportData(Request $request, User $user)
-    {
-        $validated = $request->validate([
-            'start_date' => 'required|date_format:Y-m-d',
-            'end_date'   => 'required|date_format:Y-m-d|after_or_equal:start_date',
-        ]);
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
+         $weekData = [
+             'dates' => $weekDates,
+             'today_index' => $todayIndex,
+             'schedules_by_date' => $schedulesByDate,
+         ];
 
-        $schedules = $this->getSchedulesForDates($user, [$startDate, $endDate]);
-        
-        $teacherId = Auth::id() ?? $user->id;
+         return response()->json([
+             'today' => $todayData,
+             'week' => $weekData,
+         ]);
+     }
 
-        $totalSessions = $schedules->count();
-        $absenceCount = LeaveRequest::where('teacher_id', $teacherId)
-            ->where('status', 'approved')
-            ->whereHas('schedule', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('date', [$startDate, $endDate]);
-            })
-            ->count();
-        $makeupCount = MakeupClass::where('teacher_id', $teacherId)
-            ->whereIn('status', ['approved', 'done'])
-            ->whereHas('originalSchedule', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('date', [$startDate, $endDate]);
-            })
-            ->count();
-        $attendanceRate = 95.5; // Placeholder
+     public function getReportData(Request $request, User $user)
+     {
+         $validated = $request->validate([
+             'start_date' => 'required|date_format:Y-m-d',
+             'end_date'   => 'required|date_format:Y-m-d|after_or_equal:start_date',
+         ]);
+         $startDate = Carbon::parse($validated['start_date'])->startOfDay();
+         $endDate = Carbon::parse($validated['end_date'])->endOfDay();
 
-        $chartData = [
-            ['label' => 'Tổng buổi', 'value' => $totalSessions],
-            ['label' => 'Nghỉ', 'value' => $absenceCount],
-            ['label' => 'Dạy bù', 'value' => $makeupCount],
-        ];
+         $schedules = $this->getSchedulesForDates($user, [$startDate, $endDate]);
 
-        $detailedList = $this->formatSchedulesForReport($schedules);
+         $teacherId = Auth::id() ?? $user->id;
 
-        return response()->json([
-            'summary' => [
-                'total_sessions' => $totalSessions,
-                'absences_count' => $absenceCount,
-                'makeups_count' => $makeupCount,
-                'attendance_rate' => round($attendanceRate, 1),
-            ],
-            'chart_data' => $chartData,
-            'details' => $detailedList,
-        ]);
-    }
-    
-    public function getLeaveMakeupSummary(User $user)
-    {
-        $teacherId = Auth::id() ?? $user->id;
+         $totalSessions = $schedules->count();
+         $absenceCount = LeaveRequest::where('teacher_id', $teacherId)
+             ->where('status', 'approved')
+             ->whereHas('schedule', function ($q) use ($startDate, $endDate) {
+                 $q->whereBetween('date', [$startDate, $endDate]);
+             })
+             ->count();
+         $makeupCount = MakeupClass::where('teacher_id', $teacherId)
+             ->whereIn('status', ['approved', 'done'])
+             ->whereHas('originalSchedule', function ($q) use ($startDate, $endDate) {
+                 $q->whereBetween('date', [$startDate, $endDate]);
+             })
+             ->count();
+         $attendanceRate = 95.5; // Placeholder
 
-        $approvedLeaveCount = LeaveRequest::where('teacher_id', $teacherId)
-            ->where('status', 'approved')
-            ->count();
-        $pendingMakeupCount = LeaveRequest::where('teacher_id', $teacherId)
-            ->where('status', 'approved')
-            ->whereDoesntHave('makeupClass', function ($query) {
-                $query->whereIn('status', ['pending', 'approved', 'done']);
-            })
-            ->count();
+         $chartData = [
+             ['label' => 'Tổng buổi', 'value' => $totalSessions],
+             ['label' => 'Nghỉ', 'value' => $absenceCount],
+             ['label' => 'Dạy bù', 'value' => $makeupCount],
+         ];
 
-        return response()->json([
-            'leave_count' => $approvedLeaveCount,
-            'pending_makeup_count' => $pendingMakeupCount,
-        ]);
-    }
-    
-    public function getPendingMakeupSchedules(User $user)
-    {
-        $teacherId = Auth::id() ?? $user->id;
+         $detailedList = $this->formatSchedulesForReport($schedules);
 
-        $pendingLeaves = LeaveRequest::where('teacher_id', $teacherId)
-            ->where('status', 'approved')
-            ->whereDoesntHave('makeupClass', function ($query) {
-                $query->whereIn('status', ['pending', 'approved', 'done']);
-            })
-            ->with(['schedule.room', 'schedule.classCourseAssignment.course', 'schedule.classCourseAssignment.classModel'])
-            ->get();
+         return response()->json([
+             'summary' => [
+                 'total_sessions' => $totalSessions,
+                 'absences_count' => $absenceCount,
+                 'makeups_count' => $makeupCount,
+                 'attendance_rate' => round($attendanceRate, 1),
+             ],
+             'chart_data' => $chartData,
+             'details' => $detailedList,
+         ]);
+     }
 
-        $formatted = $pendingLeaves->map(function ($leaveRequest) {
-            $schedule = $leaveRequest->schedule;
-            if (!$schedule) return null;
-            $location = $schedule->room?->location ?? 'N/A';
-            $roomName = $schedule->room?->name ?? 'N/A';
-            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
-            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+     public function getLeaveMakeupSummary(User $user)
+     {
+         $teacherId = Auth::id() ?? $user->id;
 
-            return [
-                'leave_request_id' => $leaveRequest->id,
-                'schedule_id' => $schedule->id,
-                'date_string' => $schedule->date->format('d/m/Y'),
-                'time_range' => $schedule->session,
-                'lesson_period' => $schedule->session,
-                'subject_name' => $courseName,
-                'course_code' => "({$classCode})",
-                'location' => "{$roomName} - {$location}",
-            ];
-        })->whereNotNull();
+         $approvedLeaveCount = LeaveRequest::where('teacher_id', $teacherId)
+             ->where('status', 'approved')
+             ->count();
+         $pendingMakeupCount = LeaveRequest::where('teacher_id', $teacherId)
+             ->where('status', 'approved')
+             ->whereDoesntHave('makeupClass', function ($query) {
+                 $query->whereIn('status', ['pending', 'approved', 'done']);
+             })
+             ->count();
 
-        return response()->json($formatted->values());
-    }
-    
-    public function getStudentHomeSummary(User $user)
-    {
-        if ($user->role !== 'student') {
-            return response()->json(['message' => 'Tài khoản không phải là sinh viên'], 403);
-        }
+         return response()->json([
+             'leave_count' => $approvedLeaveCount,
+             'pending_makeup_count' => $pendingMakeupCount,
+         ]);
+     }
 
-        $today = Carbon::today();
-        $now = Carbon::now();
+     public function getPendingMakeupSchedules(User $user)
+     {
+         $teacherId = Auth::id() ?? $user->id;
 
-        $studentClassIds = DB::table('class_student')
-            ->where('student_id', $user->id)
-            ->pluck('class_model_id');
+         $pendingLeaves = LeaveRequest::where('teacher_id', $teacherId)
+             ->where('status', 'approved')
+             ->whereDoesntHave('makeupClass', function ($query) {
+                 $query->whereIn('status', ['pending', 'approved', 'done']);
+             })
+             ->with(['schedule.room', 'schedule.classCourseAssignment.course', 'schedule.classCourseAssignment.classModel'])
+             ->get();
 
-        $assignmentIds = DB::table('class_course_assignments')
-            ->whereIn('class_id', $studentClassIds)
-            ->pluck('id');
+         $formatted = $pendingLeaves->map(function ($leaveRequest) {
+             $schedule = $leaveRequest->schedule;
+             if (!$schedule) return null;
+             $location = $schedule->room?->location ?? 'N/A';
+             $roomName = $schedule->room?->name ?? 'N/A';
+             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
 
-        $todaySchedules = Schedule::where('date', $today)
-            ->whereIn('class_course_assignment_id', $assignmentIds)
-            ->with([
-                'room',
-                'classCourseAssignment.course',
-                'classCourseAssignment.classModel',
-                'classCourseAssignment.teacher'
-            ])
-            ->orderBy('session', 'asc')
-            ->get();
+             return [
+                 'leave_request_id' => $leaveRequest->id,
+                 'schedule_id' => $schedule->id,
+                 'date_string' => $schedule->date->format('d/m/Y'),
+                 'time_range' => $schedule->session,
+                 'lesson_period' => $schedule->session,
+                 'subject_name' => $courseName,
+                 'course_code' => "({$classCode})",
+                 'location' => "{$roomName} - {$location}",
+             ];
+         })->whereNotNull();
 
-        $todaySessionCount = $todaySchedules->count();
+         return response()->json($formatted->values());
+     }
 
-        $startOfWeek = $today->copy()->startOfWeek();
-        $endOfWeek = $today->copy()->endOfWeek();
+     public function getStudentHomeSummary(User $user)
+     {
+         if ($user->role !== 'student') {
+             return response()->json(['message' => 'Tài khoản không phải là sinh viên'], 403);
+         }
 
-        $weekSessionCount = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
-            ->whereIn('class_course_assignment_id', $assignmentIds)
-            ->count();
+         $today = Carbon::today();
+         $now = Carbon::now();
 
-        $attendanceRate = 95.0; // Dữ liệu giả
+         $studentClassIds = DB::table('class_student')
+             ->where('student_id', $user->id)
+             ->pluck('class_model_id');
 
-        $formattedSchedules = $todaySchedules->map(function ($schedule) use ($now) {
-            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
-            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
-            $teacherName = $schedule->classCourseAssignment?->teacher?->name ?? 'N/A';
-            $location = $schedule->room?->name ?? 'N/A';
-            $status = 'Sắp diễn ra'; // (Placeholder)
+         $assignmentIds = DB::table('class_course_assignments')
+             ->whereIn('class_id', $studentClassIds)
+             ->pluck('id');
 
-            return [
-                'id' => $schedule->id,
-                'time_range' => $schedule->session,
-                'lessons' => $schedule->session,
-                'title' => $courseName,
-                'course_code' => "({$classCode})",
-                'location' => $location,
-                'status' => $status,
-                'teacher_name' => $teacherName,
-            ];
-        });
+         $todaySchedules = Schedule::where('date', $today)
+             ->whereIn('class_course_assignment_id', $assignmentIds)
+             ->with([
+                 'room',
+                 'classCourseAssignment.course',
+                 'classCourseAssignment.classModel',
+                 'classCourseAssignment.teacher'
+             ])
+             ->orderBy('session', 'asc')
+             ->get();
 
-        return response()->json([
-            'summary' => [
-                'today_sessions' => $todaySessionCount,
-                'week_sessions' => $weekSessionCount,
-                'attendance_rate' => $attendanceRate,
-            ],
-            'today_schedules' => $formattedSchedules,
-        ]);
-    }
-    
-    private function getSchedulesForDates(User $user, array $dateRange)
-    {
-        $teacherId = Auth::id() ?? $user->id;
+         $todaySessionCount = $todaySchedules->count();
 
-        $query = Schedule::whereHas('classCourseAssignment', function ($q) use ($teacherId) {
-            $q->where('teacher_id', $teacherId);
-        })
-            ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel']);
+         $startOfWeek = $today->copy()->startOfWeek();
+         $endOfWeek = $today->copy()->endOfWeek();
 
-        if (count($dateRange) == 1) {
-            $query->where('date', $dateRange[0]);
-        } else {
-            $query->whereBetween('date', $dateRange);
-        }
+         $weekSessionCount = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
+             ->whereIn('class_course_assignment_id', $assignmentIds)
+             ->count();
 
-        return $query->orderBy('session', 'asc')->get();
-    }
-    
-    private function formatSchedules($schedules, Carbon $now)
-    {
-        return $schedules->map(function ($schedule) use ($now) {
-            $location = $schedule->room?->location ?? 'N/A';
-            $roomName = $schedule->room?->name ?? 'N/A';
-            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
-            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
-            $status = $schedule->status;
+         $attendanceRate = 95.0; // Dữ liệu giả
 
-            return [
-                'id' => $schedule->id,
-                'time' => $schedule->session,
-                'lessons' => $schedule->session,
-                'title' => $courseName,
-                'course_code' => "({$classCode})",
-                'location' => "{$roomName} - {$location}",
-                'status' => $status,
-            ];
-        });
-    }
+         $formattedSchedules = $todaySchedules->map(function ($schedule) use ($now) {
+             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+             $teacherName = $schedule->classCourseAssignment?->teacher?->name ?? 'N/A';
+             $location = $schedule->room?->name ?? 'N/A';
+             $status = 'Sắp diễn ra'; // (Placeholder)
 
-    private function formatSchedulesForReport($schedules)
-    {
-        return $this->formatSchedules($schedules, Carbon::now())
-            ->map(function ($formattedSchedule) use ($schedules) {
-                /** @var \App\Models\Schedule|null $originalSchedule */
-                $originalSchedule = $schedules->firstWhere('id', $formattedSchedule['id']);
-                $formattedSchedule['date_string'] = $originalSchedule ? $originalSchedule->date->format('d/m') : 'N/A';
-                $formattedSchedule['students'] = 'N/A'; // Placeholder
-                $formattedSchedule['attendance'] = 'N/A'; // Placeholder
-                return $formattedSchedule;
-            });
-    }
+             return [
+                 'id' => $schedule->id,
+                 'time_range' => $schedule->session,
+                 'lessons' => $schedule->session,
+                 'title' => $courseName,
+                 'course_code' => "({$classCode})",
+                 'location' => $location,
+                 'status' => $status,
+                 'teacher_name' => $teacherName,
+             ];
+         });
 
-    private function formatDayName(Carbon $date)
-    {
-        if ($date->isSunday()) return 'CN';
-        return 'T' . ($date->dayOfWeek + 1);
-    }
-    
-    private function formatFullDateString(Carbon $date)
-    {
-        return $date->locale('vi')->translatedFormat('l, d/m/Y');
-    }
-    
-    public function getStudentWeeklySchedule(User $user)
-    {
-        if ($user->role !== 'student') {
-            return response()->json(['message' => 'Tài khoản không phải là sinh viên'], 403);
-        }
-        
-        if (Auth::id() != $user->id) {
-            return response()->json(['message' => 'Không có quyền truy cập'], 403);
-        }
+         return response()->json([
+             'summary' => [
+                 'today_sessions' => $todaySessionCount,
+                 'week_sessions' => $weekSessionCount,
+                 'attendance_rate' => $attendanceRate,
+             ],
+             'today_schedules' => $formattedSchedules,
+         ]);
+     }
 
-        $today = Carbon::today();
-        $startOfWeek = $today->copy()->startOfWeek();
-        $endOfWeek = $today->copy()->endOfWeek();
+     private function getSchedulesForDates(User $user, array $dateRange)
+     {
+         $teacherId = Auth::id() ?? $user->id;
 
-        $studentClassIds = DB::table('class_student')
-            ->where('student_id', $user->id)
-            ->pluck('class_model_id');
+         $query = Schedule::whereHas('classCourseAssignment', function ($q) use ($teacherId) {
+             $q->where('teacher_id', $teacherId);
+         })
+             ->with(['room', 'classCourseAssignment.course', 'classCourseAssignment.classModel']);
 
-        $assignmentIds = DB::table('class_course_assignments')
-            ->whereIn('class_id', $studentClassIds)
-            ->pluck('id');
+         if (count($dateRange) == 1) {
+             $query->where('date', $dateRange[0]);
+         } else {
+             $query->whereBetween('date', $dateRange);
+         }
 
-        $allWeekSchedules = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
-            ->whereIn('class_course_assignment_id', $assignmentIds)
-            ->with([
-                'room',
-                'classCourseAssignment.course',
-                'classCourseAssignment.classModel',
-                'classCourseAssignment.teacher'
-            ])
-            ->orderBy('date', 'asc')
-            ->orderBy('session', 'asc')
-            ->get();
-            
-        $formattedSchedules = $allWeekSchedules->map(function ($schedule) {
-            $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
-            $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
-            $teacherName = $schedule->classCourseAssignment?->teacher?->name ?? 'N/A';
-            $location = $schedule->room?->name ?? 'N/A';
-            $status = 'Sắp diễn ra'; // (Placeholder)
+         return $query->orderBy('session', 'asc')->get();
+     }
 
-            return [
-                'id' => $schedule->id,
-                'time_range' => $schedule->session,
-                'lessons' => $schedule->session,
-                'title' => $courseName,
-                'course_code' => $classCode,
-                'location' => $location,
-                'status' => $status,
-                'teacher_name' => $teacherName,
-                'schedule_date' => $schedule->date->toIso8601String(),
-            ];
-        });
+     private function formatSchedules($schedules, Carbon $now)
+     {
+         return $schedules->map(function ($schedule) use ($now) {
+             $location = $schedule->room?->location ?? 'N/A';
+             $roomName = $schedule->room?->name ?? 'N/A';
+             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+             $status = $schedule->status;
 
-        return response()->json($formattedSchedules);
-    }
+             return [
+                 'id' => $schedule->id,
+                 'time' => $schedule->session,
+                 'lessons' => $schedule->session,
+                 'title' => $courseName,
+                 'course_code' => "({$classCode})",
+                 'location' => "{$roomName} - {$location}",
+                 'status' => $status,
+             ];
+         });
+     }
+
+     private function formatSchedulesForReport($schedules)
+     {
+         return $this->formatSchedules($schedules, Carbon::now())
+             ->map(function ($formattedSchedule) use ($schedules) {
+                 /** @var \App\Models\Schedule|null $originalSchedule */
+                 $originalSchedule = $schedules->firstWhere('id', $formattedSchedule['id']);
+                 $formattedSchedule['date_string'] = $originalSchedule ? $originalSchedule->date->format('d/m') : 'N/A';
+                 $formattedSchedule['students'] = 'N/A'; // Placeholder
+                 $formattedSchedule['attendance'] = 'N/A'; // Placeholder
+                 return $formattedSchedule;
+             });
+     }
+
+     private function formatDayName(Carbon $date)
+     {
+         if ($date->isSunday()) return 'CN';
+         return 'T' . ($date->dayOfWeek + 1);
+     }
+
+     private function formatFullDateString(Carbon $date)
+     {
+         return $date->locale('vi')->translatedFormat('l, d/m/Y');
+     }
+
+     public function getStudentWeeklySchedule(User $user)
+     {
+         if ($user->role !== 'student') {
+             return response()->json(['message' => 'Tài khoản không phải là sinh viên'], 403);
+         }
+
+         if (Auth::id() != $user->id) {
+             return response()->json(['message' => 'Không có quyền truy cập'], 403);
+         }
+
+         $today = Carbon::today();
+         $startOfWeek = $today->copy()->startOfWeek();
+         $endOfWeek = $today->copy()->endOfWeek();
+
+         $studentClassIds = DB::table('class_student')
+             ->where('student_id', $user->id)
+             ->pluck('class_model_id');
+
+         $assignmentIds = DB::table('class_course_assignments')
+             ->whereIn('class_id', $studentClassIds)
+             ->pluck('id');
+
+         $allWeekSchedules = Schedule::whereBetween('date', [$startOfWeek, $endOfWeek])
+             ->whereIn('class_course_assignment_id', $assignmentIds)
+             ->with([
+                 'room',
+                 'classCourseAssignment.course',
+                 'classCourseAssignment.classModel',
+                 'classCourseAssignment.teacher'
+             ])
+             ->orderBy('date', 'asc')
+             ->orderBy('session', 'asc')
+             ->get();
+
+         $formattedSchedules = $allWeekSchedules->map(function ($schedule) {
+             $courseName = $schedule->classCourseAssignment?->course?->name ?? 'N/A';
+             $classCode = $schedule->classCourseAssignment?->classModel?->name ?? 'N/A';
+             $teacherName = $schedule->classCourseAssignment?->teacher?->name ?? 'N/A';
+             $location = $schedule->room?->name ?? 'N/A';
+             $status = 'Sắp diễn ra'; // (Placeholder)
+
+             return [
+                 'id' => $schedule->id,
+                 'time_range' => $schedule->session,
+                 'lessons' => $schedule->session,
+                 'title' => $courseName,
+                 'course_code' => $classCode,
+                 'location' => $location,
+                 'status' => $status,
+                 'teacher_name' => $teacherName,
+                 'schedule_date' => $schedule->date->toIso8601String(),
+             ];
+         });
+
+         return response()->json($formattedSchedules);
+     }
 }
