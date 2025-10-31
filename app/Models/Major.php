@@ -1,4 +1,6 @@
 <?php
+// Tên file: app/Models/Major.php
+// *** ĐÃ CẬP NHẬT: Thêm filter 'role' cho quan hệ teachers() ***
 
 namespace App\Models;
 
@@ -11,15 +13,11 @@ class Major extends Model
 {
     use HasFactory;
 
-    /**
-     * Các trường được phép gán hàng loạt.
-     *
-     * @var array
-     */
     protected $fillable = [
-        'code',
-        'name',
-        'department_id',
+        'code',          
+        'name',          
+        'department_id', 
+        'description',   
     ];
 
     /**
@@ -32,11 +30,14 @@ class Major extends Model
 
     /**
      * Lấy danh sách giảng viên thuộc ngành học này.
-     * (Giả định Giảng viên là 'User')
+     * (Sau khi đã chạy SQL cập nhật major_id cho giảng viên)
      */
     public function teachers(): HasMany
     {
-        // Nếu bạn có model 'Teacher' riêng, hãy đổi User::class thành Teacher::class
-        return $this->hasMany(User::class);
+        // 👇 **** SỬA ĐỔI **** 👇
+        // Thêm bộ lọc để chỉ lấy Giảng viên/Trưởng khoa
+        return $this->hasMany(User::class, 'major_id')
+                    ->whereIn('role', ['teacher', 'head_of_department']);
+        // 👆 **** KẾT THÚC SỬA ĐỔI **** 👆
     }
 }
