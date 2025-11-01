@@ -31,3 +31,39 @@ php artisan make:migration add_division_id_to_courses_table --table=courses
 php artisan make:migration add_description_to_divisions_table --table=divisions
 php artisan make:migration add_code_to_departments_table --table=departments
 php artisan make:migration add_description_to_departments_table --table=departments
+
+
+***Sửa databse
+Bước 1: Thêm các cột mới
+ALTER TABLE rooms
+ADD COLUMN building VARCHAR(50) NULL AFTER name,
+ADD COLUMN floor INT NULL AFTER building,
+ADD COLUMN room_type VARCHAR(100) NULL AFTER capacity,
+ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'Hoạt động' AFTER room_type;
+Bước 2: Trích xuất và cập nhật dữ liệu
+UPDATE rooms
+SET
+    building = SUBSTRING_INDEX(name, '-', 1),
+    floor = CAST(
+        CASE
+            WHEN location LIKE '%Tầng %' THEN TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(location, 'Tầng ', -1), ',', 1))
+            ELSE NULL
+        END AS UNSIGNED
+    ),
+    room_type = CASE
+        WHEN name LIKE '%(Lab)%' OR location LIKE '%Phòng máy%' OR location LIKE '%Lab %' THEN 'Thực hành'
+        WHEN name LIKE '%(Hall)%' OR location LIKE '%Hội trường%' OR location LIKE '%Giảng đường%' THEN 'Hội trường'
+        WHEN name LIKE '%(Xưởng)%' OR location LIKE '%Xưởng%' THEN 'Xưởng'
+        WHEN location LIKE '%Sân Vận Động%' THEN 'Sân bãi'
+        ELSE 'Lí thuyết'
+    END
+WHERE id > 0; -- <-- Thêm vào để sửa Lỗi 1175
+Bước 3:Dọn dẹp cột 'name
+UPDATE rooms
+SET
+    name = TRIM(SUBSTRING_INDEX(name, '(', 1))
+WHERE id > 0; -- <-- Thêm vào để sửa Lỗi 1175
+Bước 4: Đổi tên cột và xóa cột cũ
+ALTER TABLE rooms
+CHANGE COLUMN room_code name VARCHAR(100);
+DROP COLUMN location;

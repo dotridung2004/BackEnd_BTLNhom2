@@ -6,12 +6,26 @@ use Illuminate\Database\Eloquent\Model;
 
 class Room extends Model
 {
+    /**
+     * Các thuộc tính có thể gán hàng loạt.
+     *
+     * @var array
+     */
     protected $fillable = [
         'name',
+        'building',
+        'floor',
         'capacity',
-        'location',
+        'room_type',
+        'status',
+        'description',
     ];
-    public function schedules(){
+    
+    /**
+     * Lấy các lịch học liên quan đến phòng học này.
+     */
+    public function schedules()
+    {
         return $this->hasMany(Schedule::class);
     }
 }
