@@ -33,7 +33,8 @@ php artisan make:migration add_code_to_departments_table --table=departments
 php artisan make:migration add_description_to_departments_table --table=departments
 php artisan make:migration add_description_to_rooms_table --table=rooms
 php artisan make:migration add_subject_type_to_courses_table --table=courses
-
+php artisan make:migration add_description_to_courses_table --table=courses
+php artisan make:migration add_division_id_to_class_course_assignments_table --table=class_course_assignments
 
 ***Sửa databse
 Bước 1: Thêm các cột mới
