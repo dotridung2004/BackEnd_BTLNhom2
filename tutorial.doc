@@ -31,6 +31,8 @@ php artisan make:migration add_division_id_to_courses_table --table=courses
 php artisan make:migration add_description_to_divisions_table --table=divisions
 php artisan make:migration add_code_to_departments_table --table=departments
 php artisan make:migration add_description_to_departments_table --table=departments
+php artisan make:migration add_description_to_rooms_table --table=rooms
+php artisan make:migration add_subject_type_to_courses_table --table=courses
 
 
 ***Sửa databse
