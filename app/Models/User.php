@@ -6,18 +6,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // <-- 1. ADD THIS IMPORT
+use Laravel\Sanctum\HasApiTokens;
+
+// <<< THÊM CÁC KHAI BÁO (IMPORT) CHO CÁC QUAN HỆ
+use App\Models\ClassCourseAssignment;
+use App\Models\Department;
+use App\Models\Schedule;
+use App\Models\Attendance;
+use App\Models\LeaveRequest;
+use App\Models\MakeupClass;
+
 
 class User extends Authenticatable
 {
-    // 👇 2. ADD HasApiTokens HERE 👇
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable; // <-- ADDED HasApiTokens
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Các thuộc tính có thể được gán hàng loạt.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
@@ -31,30 +38,14 @@ class User extends Authenticatable
         'date_of_birth',
         'role',
         'status',
+        // Thêm các trường khác nếu có, ví dụ: department_id
+        'department_id',
     ];
 
-    // --- Relationships ---
-    public function department(){
-        return $this->belongsTo(Department::class);
-    }
-    public function classCourseAssignments(){
-        return $this->hasMany(ClassCourseAssignment::class,'teacher_id');
-    }
-    public function attendances(){
-        return $this->hasMany(Attendance::class,'student_id');
-    }
-    public function leaveRequests(){
-        return $this->hasMany(LeaveRequest::class,'teacher_id');
-    }
-    public function makeupClasses(){
-        return $this->hasMany(MakeupClass::class,'teacher_id');
-    }
-    // --- End Relationships ---
-
     /**
-     * The attributes that should be hidden for serialization.
+     * Các thuộc tính nên được ẩn khi chuyển thành JSON.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -62,12 +53,55 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * Lấy các thuộc tính nên được ép kiểu.
      *
      * @return array<string, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        // 'password' => 'hashed', // Automatically handled in Laravel 10+ if not specified
+        'password' => 'hashed', // Nên giữ lại khai báo này cho rõ ràng
     ];
+
+    // --- Các hàm định nghĩa quan hệ (Relationships) ---
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function classCourseAssignments()
+    {
+        return $this->hasMany(ClassCourseAssignment::class, 'teacher_id');
+    }
+    
+    // <<< ĐÂY LÀ HÀM BỊ THIẾU GÂY RA LỖI
+    /**
+     * Lấy tất cả các lịch dạy của một giáo viên thông qua các lớp học phần của họ.
+     */
+    public function taughtSchedules()
+    {
+        return $this->hasManyThrough(
+            Schedule::class,
+            ClassCourseAssignment::class,
+            'teacher_id', // Khóa ngoại trên bảng trung gian (class_course_assignments)
+            'class_course_assignment_id', // Khóa ngoại trên bảng cuối cùng (schedules)
+            'id', // Khóa chính trên bảng bắt đầu (users)
+            'id'  // Khóa chính trên bảng trung gian (class_course_assignments)
+        );
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'student_id');
+    }
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class, 'teacher_id');
+    }
+
+    public function makeupClasses()
+    {
+        return $this->hasMany(MakeupClass::class, 'teacher_id');
+    }
 }
