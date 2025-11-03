@@ -1,8 +1,9 @@
-<?php 
+<?php
 // routes/api.php
-use App\Http\Controllers\Api\AuthController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\ClassCourseAssignmentController;
@@ -13,29 +14,29 @@ use App\Http\Controllers\Api\LeaveRequestController;
 use App\Http\Controllers\Api\MakeupClassController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\ScheduleController;
-use App\Http\Controllers\Api\LecturerController; 
-
-// <<< SỬA 1: Sửa lại namespace cho đúng
-use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\LecturerController;
+use App\Http\Controllers\Api\ReportController; // <<< 1. THÊM REPORT CONTROLLER
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Enjoy building your API!
+|
 */
 
-// --- Route CÔNG KHAI (Public) ---
+// === ROUTE CÔNG KHAI ===
+// Route đăng nhập không cần xác thực
 Route::post('login', [AuthController::class, 'login']);
 
 
-// --- Route ĐƯỢC BẢO VỆ (Cần xác thực) ---
+// === CÁC ROUTE CẦN XÁC THỰC (Phải gửi kèm Token) ===
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-
-    // CRUD Resources
+    // Tự động tạo các route cho CRUD: GET, POST, PUT, DELETE,...
     Route::apiResource('users', UserController::class);
     Route::apiResource('attendances', AttendanceController::class);
     Route::apiResource('classcourseassignments', ClassCourseAssignmentController::class);
@@ -48,37 +49,38 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('schedules', ScheduleController::class);
     Route::apiResource('lecturers', LecturerController::class);
 
-    // --- Routes cho Giảng viên ---
+    // === API BÁO CÁO (MỚI THÊM) ===
+    Route::get('/reports/overview', [ReportController::class, 'getOverallReport']);
+
+
+    // === CÁC API CUSTOM CHO USER (GIÁO VIÊN) ===
     Route::get('/users/{user}/home-summary', [UserController::class, 'getHomeSummary']);
     Route::get('/users/{user}/schedule-data', [UserController::class, 'getScheduleData']);
-    
-    // <<< SỬA 2: Trỏ route đến ReportController >>>
-    Route::get('/users/{user}/report-data', [ReportController::class, 'getReportData']);
-
-    Route::get('/schedules/{schedule}/students-attendance', [AttendanceController::class, 'getStudentsAndAttendance']);
-    Route::post('/attendances/bulk-save', [AttendanceController::class, 'saveBulkAttendance']);
+    Route::get('/users/{user}/report-data', [UserController::class, 'getReportData']); // (API này có thể gộp vào ReportController)
     Route::get('/users/{user}/schedules-by-date', [ScheduleController::class, 'getSchedulesByDateForTeacher']);
     Route::get('/users/{user}/leave-makeup-summary', [UserController::class, 'getLeaveMakeupSummary']);
-    Route::get('/users/{user}/pending-makeup', [UserController::class, 'getPendingMakeupSchedules']); 
+    Route::get('/users/{user}/pending-makeup', [UserController::class, 'getPendingMakeupSchedules']);
     Route::get('/users/{user}/leave-history', [LeaveRequestController::class, 'getLeaveHistoryForTeacher']);
     Route::get('/users/{user}/available-schedules-for-leave', [ScheduleController::class, 'getAvailableSchedulesForLeave']);
-    Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
-    Route::post('/makeup-classes', [MakeupClassController::class, 'store']);
 
-    // --- Routes cho Sinh viên ---
+
+    // === CÁC API CUSTOM CHO SINH VIÊN ===
     Route::get('/students/{user}/home-summary', [UserController::class, 'getStudentHomeSummary']);
     Route::get('/students/{user}/schedule/week', [UserController::class, 'getStudentWeeklySchedule']);
 
-    
-    // --- ⬇️ THÊM CÁC ROUTE NÀY CHO ADMIN ⬇️ ---
-    Route::prefix('admin')->group(function () {
-        // Lấy danh sách chờ duyệt
-        Route::get('/leave-requests/pending', [LeaveRequestController::class, 'getPendingRequests']);
-        // Duyệt đơn
-        Route::post('/leave-requests/{id}/approve', [LeaveRequestController::class, 'approveRequest']);
-        // Từ chối đơn
-        Route::post('/leave-requests/{id}/reject', [LeaveRequestController::class, 'rejectRequest']);
-    });
-    // --- ⬆️ KẾT THÚC ROUTE ADMIN ⬆️ ---
 
+    // === CÁC API CUSTOM CHUNG ===
+    // Lấy danh sách sinh viên + điểm danh cho lịch dạy
+    Route::get('/schedules/{schedule}/students-attendance', [AttendanceController::class, 'getStudentsAndAttendance']);
+    // Lưu/Cập nhật điểm danh hàng loạt
+    Route::post('/attendances/bulk-save', [AttendanceController::class, 'saveBulkAttendance']);
+    // Gửi yêu cầu đăng ký nghỉ
+    Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
+    // Gửi yêu cầu đăng ký dạy bù
+    Route::post('/makeup-classes', [MakeupClassController::class, 'store']);
+
+    // Route lấy thông tin user đang đăng nhập (nếu cần)
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 });
