@@ -15,13 +15,14 @@ class ClassCourseAssignment extends Model
     protected $table = 'class_course_assignments';
 
     /**
-     * ✅ SỬA LỖI: Thêm 'division_id' vào $fillable
+     * Các thuộc tính có thể gán hàng loạt
      */
     protected $fillable = [
         'class_id',
         'course_id',
         'teacher_id',
-        'division_id', // <-- THÊM DÒNG NÀY
+        'division_id',
+        'room_id', // <-- Đã có từ lần trước
     ];
 
     public function course(){
@@ -33,11 +34,22 @@ class ClassCourseAssignment extends Model
     }
 
     /**
-     * ✅ SỬA LỖI: Thêm mối quan hệ với Bộ môn (Division)
+     * Mối quan hệ với Bộ môn (Division)
      */
     public function division(){
         return $this->belongsTo(Division::class);
     }
+
+    // ✅ SỬA LỖI: THÊM HÀM NÀY
+    /**
+     * Mối quan hệ với Phòng học (Room)
+     */
+    public function room()
+    {
+        // Giả sử cột khóa ngoại là 'room_id'
+        return $this->belongsTo(Room::class, 'room_id'); 
+    }
+    // ===================================
 
     public function schedules(){
         return $this->hasMany(Schedule::class, 'class_course_assignment_id');
