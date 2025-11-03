@@ -191,8 +191,9 @@ class LeaveRequestController extends Controller
             if (!$schedule) {
                 return null;
             }
-
-            $location = data_get($schedule, 'room.location', 'N/A');
+            
+            // ✅ SỬA LỖI 1: Bỏ 'location', chỉ dùng 'name'
+            // $location = data_get($schedule, 'room.location', 'N/A'); // <-- LỖI
             $roomName = data_get($schedule, 'room.name', 'N/A');
             $courseName = data_get($schedule, 'classCourseAssignment.course.name', 'N/A');
             $classCode = data_get($schedule, 'classCourseAssignment.classModel.name', 'N/A');
@@ -205,7 +206,8 @@ class LeaveRequestController extends Controller
                 'lesson_period' => $schedule->session,
                 'subject_name' => $courseName,
                 'course_code' => "({$classCode})",
-                'location' => "{$roomName} - {$location}",
+                // ✅ SỬA LỖI 2: Trả về 'room_name'
+                'room_name' => $roomName, // (Sửa từ 'location')
                 'leave_status' => $leaveRequest->status, // Thêm trạng thái đơn nghỉ
                 'reason' => $leaveRequest->reason,       // Thêm lý do
             ];
@@ -226,7 +228,8 @@ class LeaveRequestController extends Controller
         $requests = LeaveRequest::where('status', 'pending')
             ->with([
                 'teacher:id,name', // Lấy tên GV từ bảng 'users'
-                'schedule.room:id,name,location', // Lấy phòng học
+                // ✅ SỬA LỖI 3: Bỏ 'location' khỏi 'with'
+                'schedule.room:id,name', // Lấy phòng học (chỉ tên và id)
                 'schedule.classCourseAssignment.course:id,name,code', // Lấy môn học
                 'schedule.classCourseAssignment.classModel:id,name' // Lấy tên lớp
             ])
@@ -242,7 +245,8 @@ class LeaveRequestController extends Controller
                 'course_code' => data_get($req, 'schedule.classCourseAssignment.classModel.name', 'N/A'),
                 'leave_date' => data_get($req, 'schedule.date') ? $req->schedule->date->format('d/m/Y') : 'N/A',
                 'session' => data_get($req, 'schedule.session', 'N/A'),
-                'location' => data_get($req, 'schedule.room.name', 'N/A'),
+                // ✅ SỬA LỖI 4: Trả về 'room_name'
+                'room_name' => data_get($req, 'schedule.room.name', 'N/A'), // (Sửa từ 'location')
                 'reason' => $req->reason,
             ];
         });

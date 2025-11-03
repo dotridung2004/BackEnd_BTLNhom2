@@ -38,8 +38,10 @@ class User extends Authenticatable
         'date_of_birth',
         'role',
         'status',
-        // Thêm các trường khác nếu có, ví dụ: department_id
         'department_id',
+        // ✅ SỬA LỖI (NHỎ): Thêm 2 trường này (từ file seed)
+        'division_id',
+        'major_id',
     ];
 
     /**
@@ -73,8 +75,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(ClassCourseAssignment::class, 'teacher_id');
     }
-    
-    // <<< ĐÂY LÀ HÀM BỊ THIẾU GÂY RA LỖI
+
     /**
      * Lấy tất cả các lịch dạy của một giáo viên thông qua các lớp học phần của họ.
      */

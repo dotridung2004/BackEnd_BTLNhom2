@@ -4,62 +4,131 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-// 👇 1. Giữ lại tất cả các 'use' cần thiết
 use App\Models\Room;
 use Exception;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class RoomController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lấy danh sách tất cả phòng học (ĐÃ SỬA: Dùng paginate cho nhất quán).
      */
-    public function index()
+    public function index(Request $request)
     {
-        // 👇 2. Gộp logic: Dùng try-catch (từ file 1) 
-        //     và logic orderBy (từ file 2)
         try {
-            // Lấy tất cả phòng học và sắp xếp theo tên (từ file 2)
-            $rooms = Room::orderBy('name', 'asc')->get(); 
-            
-            return response()->json($rooms); // Trả về dữ liệu JSON
+            // <<< SỬA: Dùng paginate(10) thay vì get() >>>
+            // Điều này đảm bảo API trả về {'data': [...]}
+            // giống hệt như UserController@index,
+            // giúp Flutter ApiService (hàm fetchAvailableRooms) hoạt động
+            $rooms = Room::orderBy('updated_at', 'desc')->paginate(10);
 
+            return response()->json($rooms);
         } catch (Exception $e) {
-            // Giữ lại việc ghi log lỗi (từ file 1)
-            Log::error("Lỗi RoomController@index: " . $e->getMessage()); 
-            return response()->json([], 500); // Trả về mảng rỗng khi có lỗi
+            Log::error("Lỗi RoomController@index: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Thêm một phòng học mới.
      */
     public function store(Request $request)
     {
-        // (Sẽ làm sau)
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255|unique:rooms',
+            'building' => 'required|string|max:50',
+            'floor' => 'required|integer',
+            'capacity' => 'required|integer',
+            'room_type' => 'required|string|max:100',
+            'status' => 'sometimes|string|max:50',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $room = Room::create($request->all());
+            return response()->json($room, 201);
+        } catch (Exception $e) {
+            Log::error("Lỗi RoomController@store: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
     /**
-     * Display the specified resource.
+     * Lấy thông tin chi tiết một phòng học.
      */
     public function show(string $id)
     {
-        // (Sẽ làm sau)
+        try {
+            // (Sửa nhỏ: Bỏ with('schedules') nếu không dùng đến ở trang chi tiết)
+            $room = Room::find($id);
+
+            if (!$room) {
+                return response()->json(['message' => 'Không tìm thấy phòng học'], 404);
+            }
+
+            return response()->json($room);
+        } catch (Exception $e) {
+            Log::error("Lỗi RoomController@show: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật thông tin phòng học.
      */
     public function update(Request $request, string $id)
     {
-        // (Sẽ làm sau)
+        $room = Room::find($id);
+        if (!$room) {
+            return response()->json(['message' => 'Không tìm thấy phòng học'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255|unique:rooms,name,' . $room->id,
+            'building' => 'required|string|max:50',
+            'floor' => 'required|integer',
+            'capacity' => 'required|integer',
+            'room_type' => 'required|string|max:100',
+            'status' => 'sometimes|string|max:50',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $room->update($request->all());
+            return response()->json($room);
+        } catch (Exception $e) {
+            Log::error("Lỗi RoomController@update: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa một phòng học.
      */
     public function destroy(string $id)
     {
-        // (Sẽ làm sau)
+        try {
+            $room = Room::find($id);
+
+            if (!$room) {
+                return response()->json(['message' => 'Không tìm thấy phòng học'], 404);
+            }
+
+            $room->delete();
+            return response()->json(null, 204);
+
+        } catch (Exception $e) {
+            Log::error("Lỗi RoomController@destroy: " . $e->getMessage());
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 }

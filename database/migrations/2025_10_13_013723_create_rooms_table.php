@@ -13,10 +13,15 @@ return new class extends Migration
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->integer('capacity')->nullable();
-            $table->string('location')->nullable();
+            $table->string('name'); // Tên phòng (ví dụ: 'K1-201')
+            $table->string('building', 50)->nullable(); // Tòa nhà (ví dụ: 'K1')
+            $table->integer('floor')->nullable(); // Tầng (ví dụ: 2)
+            $table->integer('capacity')->nullable(); // Sức chứa
+            $table->string('room_type', 100)->nullable(); // Loại phòng (ví dụ: 'Lí thuyết')
+            $table->string('status', 50)->default('Hoạt động'); // Trạng thái
             $table->timestamps();
+            
+            // Cột 'location' đã bị xóa, nên bỏ nó ra khỏi migration
         });
     }
 

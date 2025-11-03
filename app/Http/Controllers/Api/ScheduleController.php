@@ -12,11 +12,11 @@ use Illuminate\Support\Facades\Validator; // Thêm trình xác thực
 class ScheduleController extends Controller
 {
     /**
-     * Lấy danh sách Lịch học (ĐÃ SỬA)
+     * Lấy danh sách Lịch học (ĐÃ SỬA: Dùng Paginate, đổi key)
      */
-public function index()
+    public function index()
     {
-        // 1. Tải lịch học CÙNG VỚI các quan hệ
+        // 1. Tải lịch học CÙNG VỚI các quan hệ và phân trang
         $schedules = Schedule::with([
             'room', // Tải thông tin phòng
             'classCourseAssignment.teacher',  // Tải GV
@@ -24,10 +24,15 @@ public function index()
             'classCourseAssignment.course'    // Tải Học phần
         ])
         ->orderBy('created_at', 'desc') // Sắp xếp mới nhất lên đầu
-        ->get();
+        
+        // <<< SỬA 1: Dùng paginate(10) thay vì get() >>>
+        // Điều này đảm bảo API trả về {'data': [...]}
+        // giống hệt như UserController@index
+        ->paginate(10); 
 
         // 2. Ánh xạ (map) dữ liệu sang định dạng Flutter mong muốn
-        $formattedSchedules = $schedules->map(function ($schedule) {
+        // (Lưu ý: paginate tự động map 'data', chúng ta cần biến đổi nó)
+        $schedules->getCollection()->transform(function ($schedule) {
             
             $assignment = $schedule->classCourseAssignment;
             $teacherName = $assignment?->teacher?->name ?? 'N/A';
@@ -36,25 +41,26 @@ public function index()
             $semester    = $assignment?->semester ?? 'N/A'; 
             $roomName    = $schedule->room?->name ?? 'N/A';
 
+            // <<< SỬA 2: Đổi key thành snake_case (vd: teacher_name) cho nhất quán >>>
             return [
                 'id' => $schedule->id, // Quan trọng cho Sửa/Xóa
                 
                 // Các key Flutter mong đợi cho Bảng (DataTable)
-                'teacherName' => $teacherName,
-                'classCode'   => $classCode,
-                'courseName'  => $courseName,
-                'semester'    => $semester,
-                'roomName'    => $roomName,
+                'teacher_name' => $teacherName,
+                'class_code'   => $classCode,
+                'course_name'  => $courseName,
+                'semester'     => $semester,
+                'room_name'    => $roomName,
 
                 // Gửi thêm ID + Dữ liệu gốc để Form 'Sửa' có thể chọn giá trị mặc định
                 'room_id' => $schedule->room_id,
                 'class_course_assignment_id' => $schedule->class_course_assignment_id,
                 'date' => $schedule->date->toDateString(), // Gửi ngày (Y-m-d)
-                'session' => $schedule->session,         // Gửi ca học
+                'session' => $schedule->session,          // Gửi ca học
             ];
         });
 
-        return response()->json($formattedSchedules);
+        return response()->json($schedules); // Trả về đối tượng Paginator
     }
 
     /**
@@ -151,15 +157,17 @@ public function index()
             return response()->json(['message' => 'Không tìm thấy lịch học'], 404);
         }
         $schedule->delete();
-        return response()->json(null, 200);
+        
+        // <<< SỬA 3: Trả về 204 (No Content) thay vì 200 >>>
+        // Đây là chuẩn RESTful cho việc xóa thành công
+        // api_service.dart (hàm deleteUser) cũng đang check 204
+        return response()->json(null, 204); 
     }
 
     // --- CÁC HÀM API KHÁC (Giữ nguyên) ---
     public function getSchedulesByDateForTeacher(Request $request, User $user)
     {
-         // (Hàm này đã đúng, giữ nguyên code cũ của bạn)
          $request->validate(['date' => 'required|date_format:Y-m-d']);
-         // ... (phần còn lại của hàm)
          $date = Carbon::parse($request->query('date'));
          $schedules = Schedule::where('date', $date)
              ->whereHas('classCourseAssignment', function ($q) use ($user) {
@@ -181,9 +189,7 @@ public function index()
 
     public function getAvailableSchedulesForLeave(User $user)
     {
-         // (Hàm này đã đúng, giữ nguyên code cũ của bạn)
          $upcomingSchedules = Schedule::where('date', '>=', Carbon::tomorrow())
-             // ... (phần còn lại của hàm)
              ->where('status', 'scheduled')
              ->whereHas('classCourseAssignment', function ($q) use ($user) {
                  $q->where('teacher_id', $user->id);

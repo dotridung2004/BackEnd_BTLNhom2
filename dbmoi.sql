@@ -1,3 +1,28 @@
+-- Tắt kiểm tra khóa ngoại để có thể xóa bảng
+SET FOREIGN_KEY_CHECKS=0;
+
+-- Xóa sạch dữ liệu cũ trong các bảng
+TRUNCATE TABLE `personal_access_tokens`;
+TRUNCATE TABLE `sessions`;
+TRUNCATE TABLE `password_reset_tokens`;
+TRUNCATE TABLE `makeup_classes`;
+TRUNCATE TABLE `leave_requests`;
+TRUNCATE TABLE `attendances`;
+TRUNCATE TABLE `schedules`;
+TRUNCATE TABLE `class_course_assignments`;
+TRUNCATE TABLE `class_student`;
+TRUNCATE TABLE `rooms`;
+TRUNCATE TABLE `courses`;
+TRUNCATE TABLE `classes`;
+TRUNCATE TABLE `users`;
+TRUNCATE TABLE `majors`;
+TRUNCATE TABLE `divisions`;
+TRUNCATE TABLE `departments`;
+
+-- Bật lại kiểm tra khóa ngoại
+SET FOREIGN_KEY_CHECKS=1;
+
+-- Bắt đầu chèn dữ liệu
 INSERT INTO `departments` (id, name, head_id, created_at, updated_at) VALUES
 (1, 'Khoa Công nghệ thông tin', NULL, NOW(), NOW()),
 (2, 'Khoa Kinh tế và Quản lý', NULL, NOW(), NOW()),
@@ -75,17 +100,20 @@ INSERT INTO `courses` (id, name, code, credits, department_id, division_id, crea
 (9, 'Sức bền vật liệu 1', 'CEE201', 3, 3, 7, NOW(), NOW()),
 (10, 'Toán Giải tích 1', 'MAT101', 3, 1, 10, NOW(), NOW());
 
-INSERT INTO `rooms` (id, name, capacity, location, created_at, updated_at) VALUES
-(1, 'K1-201', 60, 'Nhà K1, Tầng 2', NOW(), NOW()),
-(2, 'K1-202', 60, 'Nhà K1, Tầng 2', NOW(), NOW()),
-(3, 'C1-301 (Lab)', 40, 'Nhà C1, Tầng 3, Phòng máy', NOW(), NOW()),
-(4, 'C1-302 (Lab)', 40, 'Nhà C1, Tầng 3, Phòng máy', NOW(), NOW()),
-(5, 'C2-405 (Hall)', 150, 'Nhà C2, Tầng 4, Giảng đường lớn', NOW(), NOW()),
-(6, 'C5-501', 80, 'Nhà C5, Tầng 5', NOW(), NOW()),
-(7, 'C5-502', 80, 'Nhà C5, Tầng 5', NOW(), NOW()),
-(8, 'K1-301', 60, 'Nhà K1, Tầng 3', NOW(), NOW()),
-(9, 'K1-302', 60, 'Nhà K1, Tầng 3', NOW(), NOW()),
-(10, 'H1-201 (Hội trường)', 200, 'Hội trường H1, Tầng 2', NOW(), NOW());
+-- 
+-- (SỬA) KHỐI 1: BẢNG `rooms` ĐÃ ĐƯỢC CHUYỂN SANG CẤU TRÚC MỚI
+-- 
+INSERT INTO `rooms` (id, `name`, building, floor, capacity, room_type, status, description, created_at, updated_at) VALUES
+(1, 'K1-201', 'K1', 2, 60, 'Lí thuyết', 'Hoạt động', 'Nhà K1, Tầng 2', NOW(), NOW()),
+(2, 'K1-202', 'K1', 2, 60, 'Lí thuyết', 'Hoạt động', 'Nhà K1, Tầng 2', NOW(), NOW()),
+(3, 'C1-301', 'C1', 3, 40, 'Thực hành', 'Hoạt động', 'Nhà C1, Tầng 3, Phòng máy', NOW(), NOW()),
+(4, 'C1-302', 'C1', 3, 40, 'Thực hành', 'Hoạt động', 'Nhà C1, Tầng 3, Phòng máy', NOW(), NOW()),
+(5, 'C2-405', 'C2', 4, 150, 'Hội trường', 'Hoạt động', 'Nhà C2, Tầng 4, Giảng đường lớn', NOW(), NOW()),
+(6, 'C5-501', 'C5', 5, 80, 'Lí thuyết', 'Hoạt động', 'Nhà C5, Tầng 5', NOW(), NOW()),
+(7, 'C5-502', 'C5', 5, 80, 'Lí thuyết', 'Hoạt động', 'Nhà C5, Tầng 5', NOW(), NOW()),
+(8, 'K1-301', 'K1', 3, 60, 'Lí thuyết', 'Hoạt động', 'Nhà K1, Tầng 3', NOW(), NOW()),
+(9, 'K1-302', 'K1', 3, 60, 'Lí thuyết', 'Hoạt động', 'Nhà K1, Tầng 3', NOW(), NOW()),
+(10, 'H1-201', 'H1', 2, 200, 'Hội trường', 'Hoạt động', 'Hội trường H1, Tầng 2', NOW(), NOW());
 
 INSERT INTO `class_student` (id, class_model_id, student_id, created_at, updated_at) VALUES
 (1, 1, 8, NOW(), NOW()), -- SV An (8) vào lớp 65CNTT1 (1)
@@ -271,17 +299,20 @@ INSERT INTO `courses` (id, name, code, credits, department_id, division_id, crea
 (19, 'Lập trình Hướng đối tượng', 'CSE221', 3, 1, 1, NOW(), NOW()),
 (20, 'An toàn thông tin', 'CSE450', 3, 1, 4, NOW(), NOW());
 
-INSERT INTO `rooms` (id, name, capacity, location, created_at, updated_at) VALUES
-(11, 'K1-401', 60, 'Nhà K1, Tầng 4', NOW(), NOW()),
-(12, 'K1-402', 60, 'Nhà K1, Tầng 4', NOW(), NOW()),
-(13, 'C1-201', 50, 'Nhà C1, Tầng 2', NOW(), NOW()),
-(14, 'C1-202', 50, 'Nhà C1, Tầng 2', NOW(), NOW()),
-(15, 'C5-301', 80, 'Nhà C5, Tầng 3', NOW(), NOW()),
-(16, 'C5-302', 80, 'Nhà C5, Tầng 3', NOW(), NOW()),
-(17, 'XCK-1 (Xưởng)', 30, 'Nhà Xưởng Cơ khí', NOW(), NOW()),
-(18, 'C1-401 (Lab TĐH)', 40, 'Nhà C1, Tầng 4, Lab Tự động hóa', NOW(), NOW()),
-(19, 'K1-101 (Lab SBVL)', 40, 'Nhà K1, Tầng 1, Lab Sức bền', NOW(), NOW()),
-(20, 'SVD-01', 1000, 'Sân Vận Động TLU (học GDTC)', NOW(), NOW());
+-- 
+-- (SỬA) KHỐI 2: BẢNG `rooms` ĐÃ ĐƯỢC CHUYỂN SANG CẤU TRÚC MỚI
+-- 
+INSERT INTO `rooms` (id, `name`, building, floor, capacity, room_type, status, description, created_at, updated_at) VALUES
+(11, 'K1-401', 'K1', 4, 60, 'Lí thuyết', 'Hoạt động', 'Nhà K1, Tầng 4', NOW(), NOW()),
+(12, 'K1-402', 'K1', 4, 60, 'Lí thuyết', 'Hoạt động', 'Nhà K1, Tầng 4', NOW(), NOW()),
+(13, 'C1-201', 'C1', 2, 50, 'Lí thuyết', 'Hoạt động', 'Nhà C1, Tầng 2', NOW(), NOW()),
+(14, 'C1-202', 'C1', 2, 50, 'Lí thuyết', 'Hoạt động', 'Nhà C1, Tầng 2', NOW(), NOW()),
+(15, 'C5-301', 'C5', 3, 80, 'Lí thuyết', 'Hoạt động', 'Nhà C5, Tầng 3', NOW(), NOW()),
+(16, 'C5-302', 'C5', 3, 80, 'Lí thuyết', 'Hoạt động', 'Nhà C5, Tầng 3', NOW(), NOW()),
+(17, 'XCK-1', 'XCK', 1, 30, 'Xưởng', 'Hoạt động', 'Nhà Xưởng Cơ khí', NOW(), NOW()),
+(18, 'C1-401', 'C1', 4, 40, 'Thực hành', 'Hoạt động', 'Nhà C1, Tầng 4, Lab Tự động hóa', NOW(), NOW()),
+(19, 'K1-101', 'K1', 1, 40, 'Thực hành', 'Hoạt động', 'Nhà K1, Tầng 1, Lab Sức bền', NOW(), NOW()),
+(20, 'SVD-01', 'SVD', 1, 1000, 'Sân bãi', 'Hoạt động', 'Sân Vận Động TLU (học GDTC)', NOW(), NOW());
 
 INSERT INTO `class_student` (id, class_model_id, student_id, created_at, updated_at) VALUES
 (11, 7, 13, NOW(), NOW()), -- SV Đức (13) vào lớp 65XD1 (7)

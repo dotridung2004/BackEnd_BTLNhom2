@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Division; // Import Model Division
-use Illuminate\Http\Request; // 👈 1. Import Request
+use Illuminate\Http\Request; // Import Request
 use Illuminate\Support\Facades\Log; // Để ghi log lỗi
 use Illuminate\Validation\Rule; // Để validate unique
 use Exception; // Để bắt lỗi chung
@@ -12,41 +12,41 @@ use Exception; // Để bắt lỗi chung
 class DivisionController extends Controller
 {
     /**
-     * Hiển thị danh sách Bộ môn (CÓ PHÂN TRANG VÀ TÌM KIẾM).
+     * Hiển thị danh sách Bộ môn (KHÔNG PHÂN TRANG & CÓ TÌM KIẾM).
      * GET /api/divisions
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index(Request $request) // 👈 2. Thêm Request $request
+    // 👇 **** BẮT ĐẦU SỬA ĐỔI **** 👇
+    public function index(Request $request)
     {
         try {
-            // Lấy query tìm kiếm từ URL (ví dụ: /api/divisions?page=1&search=công nghệ)
+            // Lấy query tìm kiếm từ URL (ví dụ: /api/divisions?search=công nghệ)
             $searchQuery = $request->query('search');
 
-            // 3. Bắt đầu câu truy vấn (Query Builder)
-            $query = Division::with('department') 
-                             ->withCount(['teachers', 'courses']);
+            // Bắt đầu câu truy vấn (Query Builder)
+            $query = Division::with('department')
+                ->withCount(['teachers', 'courses']);
 
-            // 4. Thêm logic tìm kiếm (nếu có)
+            // Thêm logic tìm kiếm (nếu có)
             if ($searchQuery) {
                 $query->where(function($q) use ($searchQuery) {
                     // Tìm theo Tên bộ môn
                     $q->where('name', 'LIKE', '%' . $searchQuery . '%')
-                      // Hoặc tìm theo Mã bộ môn
-                      ->orWhere('code', 'LIKE', '%' . $searchQuery . '%')
-                      // Hoặc tìm theo Tên Khoa (qua quan hệ 'department')
-                      ->orWhereHas('department', function($deptQuery) use ($searchQuery) {
-                          $deptQuery->where('name', 'LIKE', '%' . $searchQuery . '%');
-                      });
+                        // Hoặc tìm theo Mã bộ môn
+                        ->orWhere('code', 'LIKE', '%' . $searchQuery . '%')
+                        // Hoặc tìm theo Tên Khoa (qua quan hệ 'department')
+                        ->orWhereHas('department', function($deptQuery) use ($searchQuery) {
+                            $deptQuery->where('name', 'LIKE', '%' . $searchQuery . '%');
+                        });
                 });
             }
 
-            // 5. Sắp xếp VÀ PHÂN TRANG (10 hàng/trang)
-            $paginator = $query->orderBy('updated_at', 'desc')
-                               ->paginate(10); // 👈 THAY ĐỔI CHÍNH
+            // Sắp xếp VÀ LẤY TẤT CẢ (thay vì paginate)
+            $divisions = $query->orderBy('updated_at', 'desc')
+                                ->get(); // 👈 THAY ĐỔI CHÍNH
 
-            // 6. Map lại dữ liệu trong 'data' của Paginator
-            // (Chúng ta cần làm điều này để thêm 'departmentName' vào JSON)
-            $mappedData = $paginator->getCollection()->map(function ($division) {
+            // Map lại dữ liệu
+            $mappedData = $divisions->map(function ($division) {
                 return [
                     'id' => $division->id,
                     'code' => $division->code,
@@ -61,22 +61,16 @@ class DivisionController extends Controller
                 ];
             });
 
-            // 7. Trả về JSON theo cấu trúc phân trang tùy chỉnh
-            return response()->json([
-                'data' => $mappedData, // Dữ liệu đã map
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'total' => $paginator->total(),
-                'per_page' => $paginator->perPage(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-            ]);
+            // Trả về một JSON array (danh sách đầy đủ)
+            return response()->json($mappedData);
             
         } catch (Exception $e) {
             Log::error("Lỗi DivisionController@index: " . $e->getMessage());
             return response()->json(['message' => 'Lỗi khi tải danh sách bộ môn.'], 500); // Trả về lỗi 500
         }
     }
+    // 👆 **** KẾT THÚC SỬA ĐỔI **** 👆
+
 
     /**
      * Lưu một Bộ môn mới vào database.
@@ -136,28 +130,30 @@ class DivisionController extends Controller
                 'name' => $division->name,
                 'department_id' => $division->department_id,
                 'departmentName' => $division->department ? $division->department->name : 'N/A',
-                'description' => $division->description ?? null, 
+                'description' => $division->description ?? null,
                 // Map danh sách giảng viên
                 'teachersList' => $division->teachers->map(function($teacher) {
                     return [
-                        'id' => $teacher->id, 
-                        'name' => $teacher->name, 
-                        'email' => $teacher->email, 
+                        'id' => $teacher->id,
+                        'name' => $teacher->name,
+                        'email' => $teacher->email,
                         'phone_number' => $teacher->phone_number,
                         'first_name' => $teacher->first_name,
                         'last_name' => $teacher->last_name,
                         'role' => $teacher->role,
                         'status' => $teacher->status,
+                        // (Thêm 'code' nếu model User của bạn có)
+                        // 'code' => $teacher->code,
                     ];
                 }),
                 // Map danh sách môn học
                 'coursesList' => $division->courses->map(function($course) {
-                     return [
-                         'id' => $course->id, 
-                         'code' => $course->code, 
-                         'name' => $course->name, 
-                         'credits' => $course->credits,
-                     ];
+                        return [
+                            'id' => $course->id,
+                            'code' => $course->code,
+                            'name' => $course->name,
+                            'credits' => $course->credits,
+                        ];
                 }),
                 // Đếm số lượng từ danh sách đã tải
                 'teacherCount' => $division->teachers->count(),
@@ -192,8 +188,8 @@ class DivisionController extends Controller
 
             $division->update($validatedData);
 
-            $division->load('department'); 
-            $division->loadCount(['teachers', 'courses']); 
+            $division->load('department');
+            $division->loadCount(['teachers', 'courses']);
 
             // Trả về dữ liệu đã map
             $divisionData = [
