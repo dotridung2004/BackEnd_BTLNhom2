@@ -181,8 +181,10 @@ class ClassCourseAssignmentController extends Controller
                 'class_id' => $classModel->id,
                 'course_id' => $validated['course_id'],
                 'teacher_id' => $validated['teacher_id'],
-                'division_id' => $validated['division_id'],
-                'room_id' => $validated['room_id'],
+                // 👇 ** SỬA LỖI 1 **
+                // Sử dụng '?? null' để xử lý trường hợp form không gửi lên
+                'division_id' => $validated['division_id'] ?? null,
+                'room_id' => $validated['room_id'] ?? null,
             ]);
 
             $newClassCourse = $this->formatClassCourse($classCourse->load([
@@ -240,8 +242,10 @@ class ClassCourseAssignmentController extends Controller
             $classCourse->update([
                 'course_id' => $validated['course_id'],
                 'teacher_id' => $validated['teacher_id'],
-                'division_id' => $validated['division_id'],
-                'room_id' => $validated['room_id'],
+                // 👇 ** SỬA LỖI 2 **
+                // Sử dụng '?? null' để xử lý trường hợp form không gửi lên
+                'division_id' => $validated['division_id'] ?? null,
+                'room_id' => $validated['room_id'] ?? null,
             ]);
 
             $updatedClassCourse = $this->formatClassCourse($classCourse->load([

@@ -21,7 +21,6 @@ class ClassModel extends Model
     protected $fillable = [
         'name', // <-- Đã sửa
         'semester',
-        'academic_year',
         'department_id',
     ];
 

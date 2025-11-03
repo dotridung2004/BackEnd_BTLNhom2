@@ -76,17 +76,17 @@ INSERT INTO `users` (id, name, first_name, last_name, email, password, phone_num
 UPDATE `departments` SET `head_id` = 1 WHERE `id` = 1; -- Gán PGS.TS. Nguyễn Thanh Tùng làm Trưởng khoa CNTT
 UPDATE `departments` SET `head_id` = 2 WHERE `id` = 2; -- Gán PGS.TS. Đỗ Thị Thu Hằng làm Trưởng khoa KT&QL
 
-INSERT INTO `classes` (id, name, semester, academic_year, department_id, created_at, updated_at) VALUES
-(1, '65CNTT1', '1', '2023-2024', 1, NOW(), NOW()),
-(2, '65CNTT2', '1', '2023-2024', 1, NOW(), NOW()),
-(3, '65KTPM1', '1', '2023-2024', 1, NOW(), NOW()),
-(4, '65HTTT1', '1', '2023-2024', 1, NOW(), NOW()),
-(5, '65QTKD1', '1', '2023-2024', 2, NOW(), NOW()),
-(6, '65KT1', '1', '2023-2024', 2, NOW(), NOW()),
-(7, '65XD1', '1', '2023-2024', 3, NOW(), NOW()),
-(8, '64CNTT1', '3', '2023-2024', 1, NOW(), NOW()), -- Lớp năm 2, kỳ 3
-(9, '64KTPM1', '3', '2023-2024', 1, NOW(), NOW()),
-(10, '66CNTT1', '1', '2024-2025', 1, NOW(), NOW()); -- Lớp khóa mới
+INSERT INTO `classes` (id, name, semester, department_id, created_at, updated_at) VALUES
+(1, '65CNTT1', '1', 1, NOW(), NOW()),
+(2, '65CNTT2', '1', 1, NOW(), NOW()),
+(3, '65KTPM1', '1', 1, NOW(), NOW()),
+(4, '65HTTT1', '1', 1, NOW(), NOW()),
+(5, '65QTKD1', '1', 2, NOW(), NOW()),
+(6, '65KT1', '1', 2, NOW(), NOW()),
+(7, '65XD1', '1', 3, NOW(), NOW()),
+(8, '64CNTT1', '3', 1, NOW(), NOW()), -- Lớp năm 2, kỳ 3
+(9, '64KTPM1', '3', 1, NOW(), NOW()),
+(10, '66CNTT1', '1', 1, NOW(), NOW()); -- Lớp khóa mới
 
 INSERT INTO `courses` (id, name, code, credits, department_id, division_id, created_at, updated_at) VALUES
 (1, 'Nhập môn Lập trình', 'CSE112', 3, 1, 1, NOW(), NOW()),
@@ -275,17 +275,17 @@ INSERT INTO `users` (id, name, first_name, last_name, email, password, phone_num
 (19, 'Nguyễn Anh Dũng', 'Nguyễn', 'Anh Dũng', '65QTKD1.dung.na@tlu.edu.vn', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0987654319', 'student', 'active', NULL, 5, NOW(), NOW()),
 (20, 'Mai Văn Toàn', 'Mai', 'Văn Toàn', '65CNTT1.toan.mv@tlu.edu.vn', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0987654320', 'student', 'active', NULL, 1, NOW(), NOW());
 
-INSERT INTO `classes` (id, name, semester, academic_year, department_id, created_at, updated_at) VALUES
-(11, '65XD2', '1', '2023-2024', 3, NOW(), NOW()),
-(12, '65CK1', '1', '2023-2024', 5, NOW(), NOW()),
-(13, '65TĐH1', '1', '2023-2024', 6, NOW(), NOW()),
-(14, '65KTMT1', '1', '2023-2024', 7, NOW(), NOW()),
-(15, '65TMĐT1', '1', '2023-2024', 2, NOW(), NOW()),
-(16, '64CNTT2', '3', '2023-2024', 1, NOW(), NOW()),
-(17, '64QTKD1', '3', '2023-2024', 2, NOW(), NOW()),
-(18, '64XD1', '3', '2023-2024', 3, NOW(), NOW()),
-(19, '66QTKD1', '1', '2024-2025', 2, NOW(), NOW()),
-(20, '66XD1', '1', '2024-2025', 3, NOW(), NOW());
+INSERT INTO `classes` (id, name, semester, department_id, created_at, updated_at) VALUES
+(11, '65XD2', '1', 3, NOW(), NOW()),
+(12, '65CK1', '1', 5, NOW(), NOW()),
+(13, '65TĐH1', '1', 6, NOW(), NOW()),
+(14, '65KTMT1', '1', 7, NOW(), NOW()),
+(15, '65TMĐT1', '1', 2, NOW(), NOW()),
+(16, '64CNTT2', '3', 1, NOW(), NOW()),
+(17, '64QTKD1', '3', 2, NOW(), NOW()),
+(18, '64XD1', '3', 3, NOW(), NOW()),
+(19, '66QTKD1', '1', 2, NOW(), NOW()),
+(20, '66XD1', '1', 3, NOW(), NOW());
 
 INSERT INTO `courses` (id, name, code, credits, department_id, division_id, created_at, updated_at) VALUES
 (11, 'Cơ học lý thuyết 1', 'MEC101', 3, 5, 20, NOW(), NOW()),
