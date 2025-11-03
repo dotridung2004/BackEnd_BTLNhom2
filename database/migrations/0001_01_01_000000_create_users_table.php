@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('avatar_url')->nullable();
             $table->enum('gender', ['male','female','other'])->nullable();
             $table->date('date_of_birth')->nullable();
+            $table->foreignId('department_id')->nullable();
             $table->enum('role',['student', 'teacher', 'training_office', 'head_of_department'])->default('teacher');
             $table->enum('status', ['active', 'inactive', 'banned'])->default('active');
             $table->rememberToken();

@@ -34,8 +34,9 @@ class User extends Authenticatable
     ];
 
     // --- Relationships ---
-    public function department(){
-        return $this->belongsTo(Department::class);
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
     public function classCourseAssignments(){
         return $this->hasMany(ClassCourseAssignment::class,'teacher_id');

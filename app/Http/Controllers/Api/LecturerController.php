@@ -14,13 +14,13 @@ class LecturerController extends Controller
     {
        try {
             $lecturers = User::where('role', 'teacher')
-                                ->with('department')
-                                ->orderBy('name', 'asc')
-                                ->get();
+                                 ->with('department') // Đã có eager loading, rất tốt
+                                 ->orderBy('name', 'asc')
+                                 ->get();
             return response()->json($lecturers, 200);
-        } catch (\Exception $e) {
+       } catch (\Exception $e) {
             return response()->json(['message' => 'Đã xảy ra lỗi khi truy vấn dữ liệu.'], 500);
-        }
+       }
     }
 
     /**
@@ -31,11 +31,11 @@ class LecturerController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            // <<< XÓA DÒNG VALIDATE user_code Ở ĐÂY
+            // <<< DÒNG VALIDATE user_code ĐÃ BỊ XÓA
             'password' => 'required|string|min:6',
             'department_id' => 'required|integer|exists:departments,id',
             'phone_number' => 'nullable|string',
-            'date_of_birth' => 'nullable|date_format:d/m/Y', 
+            'date_of_birth' => 'nullable|date_format:d/m/Y', // Validate đúng định dạng dd/mm/yyyy
         ]);
 
         if ($validator->fails()) {
@@ -43,22 +43,23 @@ class LecturerController extends Controller
         }
 
         try {
+             // Chuyển đổi sang Y-m-d để lưu vào DB
              $dob = $request->date_of_birth ? \DateTime::createFromFormat('d/m/Y', $request->date_of_birth)->format('Y-m-d') : null;
 
             $lecturer = User::create([
                 'name' => $request->name,
-                'first_name' => $request->name, // Tự động điền first_name
-                'last_name' => '',             // Tự động điền last_name
+                'first_name' => $request->name, 
+                'last_name' => '', 
                 'email' => $request->email,
-                // <<< XÓA DÒNG user_code Ở ĐÂY
+                // <<< DÒNG user_code ĐÃ BỊ XÓA
                 'password' => Hash::make($request->password),
                 'department_id' => $request->department_id,
                 'phone_number' => $request->phone_number,
-                'date_of_birth' => $dob,
+                'date_of_birth' => $dob, // Lưu định dạng Y-m-d
                 'role' => 'teacher', 
             ]);
 
-            $lecturer->load('department');
+            $lecturer->load('department'); // Load quan hệ để trả về JSON đầy đủ
             return response()->json($lecturer, 201); 
 
         } catch (\Exception $e) {
@@ -72,7 +73,7 @@ class LecturerController extends Controller
     public function show($id)
     {
         try {
-            $lecturer = User::with('department')->findOrFail($id);
+            $lecturer = User::with('department')->findOrFail($id); // Đã có eager loading
             return response()->json($lecturer, 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Không tìm thấy giảng viên'], 404);
@@ -87,10 +88,10 @@ class LecturerController extends Controller
          $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-             // <<< XÓA DÒNG VALIDATE user_code Ở ĐÂY
+             // <<< DÒNG VALIDATE user_code ĐÃ BỊ XÓA
             'department_id' => 'required|integer|exists:departments,id',
             'phone_number' => 'nullable|string',
-            'date_of_birth' => 'nullable|date_format:d/m/Y',
+            'date_of_birth' => 'nullable|date_format:d/m/Y', // Validate đúng định dạng dd/mm/yyyy
         ]);
 
         if ($validator->fails()) {
@@ -99,19 +100,20 @@ class LecturerController extends Controller
 
         try {
             $lecturer = User::findOrFail($id);
+            // Chuyển đổi sang Y-m-d để lưu vào DB
             $dob = $request->date_of_birth ? \DateTime::createFromFormat('d/m/Y', $request->date_of_birth)->format('Y-m-d') : null;
 
             $lecturer->update([
                 'name' => $request->name,
-                'first_name' => $request->name, // Tự động cập nhật first_name
+                'first_name' => $request->name, 
                 'email' => $request->email,
-                // <<< XÓA DÒNG user_code Ở ĐÂY
+                // <<< DÒNG user_code ĐÃ BỊ XÓA
                 'department_id' => $request->department_id,
                 'phone_number' => $request->phone_number,
-                'date_of_birth' => $dob,
+                'date_of_birth' => $dob, // Lưu định dạng Y-m-d
             ]);
 
-            $lecturer->load('department');
+            $lecturer->load('department'); // Load quan hệ để trả về JSON đầy đủ
             return response()->json($lecturer, 200);
 
         } catch (\Exception $e) {

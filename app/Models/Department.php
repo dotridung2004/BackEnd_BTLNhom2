@@ -67,4 +67,10 @@ class Department extends Model
          // Quan hệ này đúng nếu bảng 'courses' có cột 'department_id'
         return $this->hasMany(Course::class, 'department_id'); // Nên chỉ rõ khóa ngoại
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class, 'department_id');
+    }
+
 }

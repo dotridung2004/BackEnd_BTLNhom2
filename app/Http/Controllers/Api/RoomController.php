@@ -17,7 +17,7 @@ class RoomController extends Controller
     public function index()
     {
         // 👇 2. Gộp logic: Dùng try-catch (từ file 1) 
-        //    và logic orderBy (từ file 2)
+        //     và logic orderBy (từ file 2)
         try {
             // Lấy tất cả phòng học và sắp xếp theo tên (từ file 2)
             $rooms = Room::orderBy('name', 'asc')->get(); 

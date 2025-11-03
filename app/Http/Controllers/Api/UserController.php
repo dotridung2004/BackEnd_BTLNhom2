@@ -438,95 +438,7 @@ class UserController extends Controller
         ]);
     }
 
-    // --- API CHO BÁO CÁO GIÁO VIÊN ---
-    
-    /**
-     * @OA\Get(
-     * path="/api/users/{user}/report-data",
-     * operationId="getTeacherReportData",
-     * tags={"Teachers (User)"},
-     * summary="Lấy dữ liệu báo cáo cho GIÁO VIÊN",
-     * security={{"bearerAuth":{}}},
-     * @OA\Parameter(
-     * name="user",
-     * in="path",
-     * required=true,
-     * description="ID của giáo viên",
-     * @OA\Schema(type="integer")
-     * ),
-     * @OA\Parameter(
-     * name="start_date",
-     * in="query",
-     * required=true,
-     * description="Ngày bắt đầu (Y-m-d)",
-     * @OA\Schema(type="string", format="date")
-     * ),
-     * @OA\Parameter(
-     * name="end_date",
-     * in="query",
-     * required=true,
-     * description="Ngày kết thúc (Y-m-d)",
-     * @OA\Schema(type="string", format="date")
-     * ),
-     * @OA\Response(
-     * response=200,
-     * description="Thành công",
-     * @OA\JsonContent()
-     * ),
-     * @OA\Response(
-     * response=422,
-     * description="Lỗi validate ngày tháng"
-     * )
-     * )
-     */
-    public function getReportData(Request $request, User $user)
-    {
-        $validated = $request->validate([
-            'start_date' => 'required|date_format:Y-m-d',
-            'end_date'   => 'required|date_format:Y-m-d|after_or_equal:start_date',
-        ]);
-        $startDate = Carbon::parse($validated['start_date'])->startOfDay();
-        $endDate = Carbon::parse($validated['end_date'])->endOfDay();
-
-        $schedules = $this->getSchedulesForDates($user, [$startDate, $endDate]);
-
-        // (Đã sửa để dùng Auth::id() thay vì $user->id)
-        $teacherId = Auth::id() ?? $user->id; // Ưu tiên Auth::id()
-
-        $totalSessions = $schedules->count();
-        $absenceCount = LeaveRequest::where('teacher_id', $teacherId)
-            ->where('status', 'approved')
-            ->whereHas('schedule', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('date', [$startDate, $endDate]);
-            })
-            ->count();
-        $makeupCount = MakeupClass::where('teacher_id', $teacherId)
-            ->whereIn('status', ['approved', 'done'])
-            ->whereHas('originalSchedule', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('date', [$startDate, $endDate]);
-            })
-            ->count();
-        $attendanceRate = 95.5; // Placeholder
-
-        $chartData = [
-            ['label' => 'Tổng buổi', 'value' => $totalSessions],
-            ['label' => 'Nghỉ', 'value' => $absenceCount],
-            ['label' => 'Dạy bù', 'value' => $makeupCount],
-        ];
-
-        $detailedList = $this->formatSchedulesForReport($schedules);
-
-        return response()->json([
-            'summary' => [
-                'total_sessions' => $totalSessions,
-                'absences_count' => $absenceCount,
-                'makeups_count' => $makeupCount,
-                'attendance_rate' => round($attendanceRate, 1),
-            ],
-            'chart_data' => $chartData,
-            'details' => $detailedList,
-        ]);
-    }
+    // --- <<< SỬA: ĐÃ XÓA HÀM getReportData() KHỎI ĐÂY (ĐÃ CHUYỂN SANG ReportController) >>> ---
     
     // --- API CHO NGHỈ/BÙ GIÁO VIÊN ---
 
@@ -764,18 +676,7 @@ class UserController extends Controller
         });
     }
 
-    private function formatSchedulesForReport($schedules)
-    {
-        return $this->formatSchedules($schedules, Carbon::now())
-            ->map(function ($formattedSchedule) use ($schedules) {
-                /** @var \App\Models\Schedule|null $originalSchedule */
-                $originalSchedule = $schedules->firstWhere('id', $formattedSchedule['id']);
-                $formattedSchedule['date_string'] = $originalSchedule ? $originalSchedule->date->format('d/m') : 'N/A';
-                $formattedSchedule['students'] = 'N/A'; // Placeholder
-                $formattedSchedule['attendance'] = 'N/A'; // Placeholder
-                return $formattedSchedule;
-            });
-    }
+    // <<< SỬA: XÓA HÀM formatSchedulesForReport KHỎI CONTROLLER NÀY
 
     private function formatDayName(Carbon $date)
     {
