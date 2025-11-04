@@ -35,7 +35,8 @@ php artisan make:migration add_description_to_rooms_table --table=rooms
 php artisan make:migration add_subject_type_to_courses_table --table=courses
 php artisan make:migration add_description_to_courses_table --table=courses
 php artisan make:migration add_division_id_to_class_course_assignments_table --table=class_course_assignments
-
+php artisan make:migration add_room_id_to_class_course_assignments_table --table=class_course_assignments
+php artisan make:migration add_description_to_rooms_table --table=rooms
 ***Sửa databse
 Bước 1: Thêm các cột mới
 ALTER TABLE rooms
@@ -70,3 +71,24 @@ Bước 4: Đổi tên cột và xóa cột cũ
 ALTER TABLE rooms
 CHANGE COLUMN room_code name VARCHAR(100);
 DROP COLUMN location;
+
+SELECT id, name FROM divisions WHERE name LIKE '%Cơ khí%' OR name LIKE '%Chế tạo máy%';
+-- Gán '65KTPM1' (class_id=3) cho 'Bộ môn Công nghệ phần mềm' (division_id=1)
+UPDATE class_course_assignments SET division_id = 1 WHERE class_id = 3;
+
+-- Gán '65HTTT1' (class_id=4) cho 'Bộ môn Hệ thống thông tin' (division_id=2)
+UPDATE class_course_assignments SET division_id = 2 WHERE class_id = 4;
+
+-- Gán các lớp CNTT chung (65CNTT1, 65CNTT2, 64CNTT1...) cho 'Bộ môn Khoa học máy tính' (division_id=3)
+UPDATE class_course_assignments SET division_id = 3 WHERE class_id IN (1, 2, 8, 9, 10, 16, 17);
+-- Gán '65QTKD1' (class_id=5) cho 'Bộ môn Quản trị kinh doanh' (division_id=5)
+UPDATE class_course_assignments SET division_id = 5 WHERE class_id = 5;
+
+-- Gán '65KT1' (class_id=6) cho 'Bộ môn Kế toán' (division_id=6)
+UPDATE class_course_assignments SET division_id = 6 WHERE class_id = 6;
+-- Gán '65XD1' (class_id=7) và '65XD2' (class_id=11) cho 'Bộ môn Xây dựng Dân dụng' (division_id=7)
+UPDATE class_course_assignments SET division_id = 7 WHERE class_id IN (7, 11);
+-- Gán '65CK1' (class_id=12) và các lớp 'aaaa' (class_id=41, 42) cho Bộ môn Cơ khí
+UPDATE class_course_assignments 
+SET division_id = 20  -- <-- THAY SỐ NÀY
+WHERE class_id IN (12, 41, 42);

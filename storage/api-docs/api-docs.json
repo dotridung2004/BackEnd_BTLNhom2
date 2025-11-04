@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
+            "url": "http://my-default-host.com",
             "description": "API Server"
         }
     ],
@@ -266,6 +266,7 @@
                 "summary": "Đăng nhập người dùng",
                 "operationId": "loginUser",
                 "requestBody": {
+                    "description": "Thông tin đăng nhập của người dùng",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -283,7 +284,7 @@
                                     "password": {
                                         "type": "string",
                                         "format": "password",
-                                        "example": "password"
+                                        "example": "password123"
                                     }
                                 },
                                 "type": "object"
@@ -299,7 +300,15 @@
                                 "schema": {
                                     "properties": {
                                         "user": {
-                                            "type": "object"
+                                            "type": "object",
+                                            "example": {
+                                                "id": 1,
+                                                "name": "Tên Giáo viên"
+                                            }
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|aBcDeFgHiJkLmNoPqRsTuVwXyZ"
                                         }
                                     },
                                     "type": "object"
@@ -314,6 +323,1042 @@
                         "description": "Dữ liệu không hợp lệ (Validation error)"
                     }
                 }
+            }
+        },
+        "/api/class-courses": {
+            "get": {
+                "tags": [
+                    "Class Course Assignments"
+                ],
+                "summary": "Lấy danh sách Lớp Học Phần (cho Admin Panel)",
+                "operationId": "6492c03717f705b317b8ccac8e909f03",
+                "responses": {
+                    "200": {
+                        "description": "Thành công. Trả về một mảng các lớp học phần."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Class Course Assignments"
+                ],
+                "summary": "Tạo Lớp học phần MỚI",
+                "operationId": "c0cd5c125ae1e709c4edfd11c812ba9e",
+                "requestBody": {
+                    "description": "Dữ liệu để tạo LHP mới",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "department_id",
+                                    "semester",
+                                    "course_id",
+                                    "teacher_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Lớp Lập trình Web - Nhóm 1"
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "semester": {
+                                        "type": "string",
+                                        "example": "HK1 2024-2025"
+                                    },
+                                    "course_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "teacher_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "division_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "room_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tạo thành công"
+                    },
+                    "422": {
+                        "description": "Lỗi validation (ví dụ: Tên lớp đã tồn tại)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/class-courses/form-data": {
+            "get": {
+                "tags": [
+                    "Class Course Assignments"
+                ],
+                "summary": "Lấy dữ liệu cho Form Thêm/Sửa LHP",
+                "description": "Lấy danh sách teachers, courses, departments, divisions, rooms, semesters để điền vào các dropdown/select.",
+                "operationId": "4e02b6beb979ca2187560004356c18ac",
+                "responses": {
+                    "200": {
+                        "description": "Thành công. Trả về 1 object chứa các mảng dữ liệu."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/class-courses/{id}/details": {
+            "get": {
+                "tags": [
+                    "Class Course Assignments"
+                ],
+                "summary": "Lấy chi tiết một lớp học phần (cho màn hình Chi tiết)",
+                "description": "Trò về thông tin LHP, danh sách sinh viên, và lịch học.",
+                "operationId": "42df4efb339c3643b05cfda37de82a38",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID của ClassCourseAssignment (LHP)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy LHP"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/class-courses/{class_course}": {
+            "get": {
+                "tags": [
+                    "Class Course Assignments"
+                ],
+                "summary": "Lấy 1 LHP (dữ liệu cơ bản - RESTful)",
+                "description": "Hàm show() gốc của apiResource, trả về dữ liệu thô.",
+                "operationId": "ef2afa9ebf2c17233b6a2e5b30846aef",
+                "parameters": [
+                    {
+                        "name": "class_course",
+                        "in": "path",
+                        "description": "ID của ClassCourseAssignment (LHP)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Class Course Assignments"
+                ],
+                "summary": "Cập nhật Lớp học phần",
+                "operationId": "152ad91e2661f78f2924df8463e4bc5d",
+                "parameters": [
+                    {
+                        "name": "class_course",
+                        "in": "path",
+                        "description": "ID của ClassCourseAssignment (LHP)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Dữ liệu để cập nhật LHP",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "department_id",
+                                    "semester",
+                                    "course_id",
+                                    "teacher_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Lớp Lập trình Web - Nhóm 1 (đã sửa)"
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "semester": {
+                                        "type": "string",
+                                        "example": "HK1 2024-2025"
+                                    },
+                                    "course_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "teacher_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "division_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "room_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy LHP"
+                    },
+                    "422": {
+                        "description": "Lỗi validation (ví dụ: Tên lớp đã tồn tại)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Class Course Assignments"
+                ],
+                "summary": "Xóa lớp học phần",
+                "operationId": "10fda6e4fcac32f01f14211a780c0406",
+                "parameters": [
+                    {
+                        "name": "class_course",
+                        "in": "path",
+                        "description": "ID của ClassCourseAssignment (LHP)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Xóa thành công (No Content)"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy LHP"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/registered-courses": {
+            "get": {
+                "tags": [
+                    "Class Course Assignments"
+                ],
+                "summary": "Lấy DS LHP + số lượng sinh viên",
+                "description": "Dùng cho route /registered-courses, lấy LHP và đếm số SV đã đăng ký.",
+                "operationId": "1ee64b0a9c9a6a357124dc32d65b42b8",
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/courses": {
+            "get": {
+                "tags": [
+                    "Courses"
+                ],
+                "summary": "Lấy danh sách Học Phần",
+                "description": "Tải danh sách tất cả học phần, sắp xếp theo thời gian cập nhật mới nhất. Có thể tìm kiếm.",
+                "operationId": "d452dd5ed2fa44f48bd98e5677e3cc3f",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Tìm kiếm theo Mã (code) hoặc Tên (name) học phần",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công. Trả về một mảng các học phần."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Courses"
+                ],
+                "summary": "Tạo học phần mới",
+                "description": "Xử lý thêm mới học phần.",
+                "operationId": "661e120d4c0deb68ae037ccc30104d02",
+                "requestBody": {
+                    "description": "Dữ liệu học phần mới",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code",
+                                    "name",
+                                    "credits",
+                                    "department_id",
+                                    "subject_type"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "IT4409"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Lập trình Web"
+                                    },
+                                    "credits": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "subject_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Bắt buộc",
+                                            "Tùy chọn"
+                                        ],
+                                        "example": "Bắt buộc"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Mô tả về học phần...",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tạo thành công"
+                    },
+                    "422": {
+                        "description": "Lỗi validation (dữ liệu không hợp lệ)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/courses/{course}": {
+            "get": {
+                "tags": [
+                    "Courses"
+                ],
+                "summary": "Lấy chi tiết một học phần",
+                "description": "Tải chi tiết một học phần.",
+                "operationId": "0449b337fd98c3b8384aa8816d862c1d",
+                "parameters": [
+                    {
+                        "name": "course",
+                        "in": "path",
+                        "description": "ID của học phần",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy học phần"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Courses"
+                ],
+                "summary": "Cập nhật thông tin học phần",
+                "description": "Xử lý chỉnh sửa thông tin học phần.",
+                "operationId": "be785e49d1bfc073431c7830ad9d2242",
+                "parameters": [
+                    {
+                        "name": "course",
+                        "in": "path",
+                        "description": "ID của học phần",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Dữ liệu học phần cần cập nhật",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code",
+                                    "name",
+                                    "credits",
+                                    "department_id",
+                                    "subject_type"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "IT4409"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Lập trình Web nâng cao"
+                                    },
+                                    "credits": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "subject_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Bắt buộc",
+                                            "Tùy chọn"
+                                        ],
+                                        "example": "Bắt buộc"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Mô tả cập nhật...",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy học phần"
+                    },
+                    "422": {
+                        "description": "Lỗi validation (dữ liệu không hợp lệ)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Courses"
+                ],
+                "summary": "Xóa một học phần",
+                "description": "Xử lý xóa học phần.",
+                "operationId": "7edfc059bd1db103afd9b3ff6f1e46c0",
+                "parameters": [
+                    {
+                        "name": "course",
+                        "in": "path",
+                        "description": "ID của học phần",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Xóa thành công (No Content)"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy học phần"
+                    },
+                    "500": {
+                        "description": "Lỗi xóa học phần"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/departments": {
+            "get": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Lấy danh sách Khoa",
+                "description": "Tải danh sách tất cả các khoa, cùng với tên trưởng khoa và số lượng giảng viên, ngành học.",
+                "operationId": "e8478e3a557995e1da564073521762f6",
+                "responses": {
+                    "200": {
+                        "description": "Thành công. Trả về một mảng các khoa."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Tạo Khoa mới",
+                "description": "Tạo một khoa mới.",
+                "operationId": "9a3a8ebf7326b72fd181c15603cdd21e",
+                "requestBody": {
+                    "description": "Dữ liệu của khoa mới",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "code"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Khoa Công nghệ thông tin"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "CNTT"
+                                    },
+                                    "head_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Mô tả về khoa...",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tạo thành công"
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ (Validation error)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/departments/{department}": {
+            "get": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Lấy thông tin 1 Khoa (cơ bản)",
+                "description": "Hàm 'show' mặc định của apiResource.",
+                "operationId": "6455234c0c02bb51866fc1cee8736649",
+                "parameters": [
+                    {
+                        "name": "department",
+                        "in": "path",
+                        "description": "ID của khoa",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy khoa"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Cập nhật thông tin Khoa",
+                "description": "Cập nhật thông tin của một khoa đã tồn tại.",
+                "operationId": "2a98840421ddef9352177de27844d174",
+                "parameters": [
+                    {
+                        "name": "department",
+                        "in": "path",
+                        "description": "ID của khoa",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Dữ liệu cập nhật của khoa",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "code"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Khoa CNTT (đã cập nhật)"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "CNTT"
+                                    },
+                                    "head_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Mô tả đã cập nhật...",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy khoa"
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ (Validation error)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Xóa một Khoa",
+                "description": "Xóa một khoa khỏi cơ sở dữ liệu.",
+                "operationId": "31b1591b7f2d3bb59934504ea6019f48",
+                "parameters": [
+                    {
+                        "name": "department",
+                        "in": "path",
+                        "description": "ID của khoa",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Xóa thành công (No Content)"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy khoa"
+                    },
+                    "409": {
+                        "description": "Không thể xóa (còn bộ môn/ngành học)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/departments/{id}/details": {
+            "get": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "Lấy chi tiết đầy đủ của 1 Khoa",
+                "description": "Lấy thông tin khoa, cùng danh sách Giảng viên, Ngành học, và Bộ môn.",
+                "operationId": "0056b86c1c1a4df7da11d097487b7407",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID của khoa",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công. Trả về object lồng nhau."
+                    },
+                    "404": {
+                        "description": "Không tìm thấy khoa"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/divisions": {
+            "get": {
+                "tags": [
+                    "Divisions"
+                ],
+                "summary": "Lấy danh sách Bộ Môn (có tìm kiếm)",
+                "description": "Hiển thị danh sách Bộ môn (KHÔNG PHÂN TRANG). Hỗ trợ tìm kiếm theo Tên/Mã bộ môn, Tên khoa.",
+                "operationId": "38b143faa0b684d5978ff5200d60a9cb",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Tìm kiếm theo Tên/Mã bộ môn hoặc Tên khoa",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công. Trả về một mảng các bộ môn."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Divisions"
+                ],
+                "summary": "Tạo Bộ môn mới",
+                "description": "Lưu một Bộ môn mới vào database.",
+                "operationId": "ce6b9c10ed17166b60fb7d0bc71c8938",
+                "requestBody": {
+                    "description": "Dữ liệu của bộ môn mới",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code",
+                                    "name",
+                                    "department_id"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "BM-KHMT"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Bộ môn Khoa học Máy tính"
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Mô tả về bộ môn...",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tạo thành công"
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ (Validation error)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/divisions/{division}": {
+            "get": {
+                "tags": [
+                    "Divisions"
+                ],
+                "summary": "Lấy chi tiết 1 Bộ môn",
+                "description": "Hiển thị chi tiết một Bộ môn cụ thể, bao gồm danh sách giảng viên và môn học.",
+                "operationId": "f15c59df48ceaf35b2d44167b6ff0dec",
+                "parameters": [
+                    {
+                        "name": "division",
+                        "in": "path",
+                        "description": "ID của bộ môn",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy bộ môn"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Divisions"
+                ],
+                "summary": "Cập nhật thông tin Bộ môn",
+                "description": "Cập nhật thông tin Bộ môn (Lưu ý: Không cho phép sửa 'code').",
+                "operationId": "550098d3dd3c71cfe92262028705d3ea",
+                "parameters": [
+                    {
+                        "name": "division",
+                        "in": "path",
+                        "description": "ID của bộ môn",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Dữ liệu cập nhật của bộ môn",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "department_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Bộ môn Kỹ thuật Máy tính"
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Mô tả đã cập nhật...",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy bộ môn"
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ (Validation error)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Divisions"
+                ],
+                "summary": "Xóa một Bộ môn",
+                "description": "Xóa một Bộ môn.",
+                "operationId": "092b3fedcada59cbd2cc6652964968da",
+                "parameters": [
+                    {
+                        "name": "division",
+                        "in": "path",
+                        "description": "ID của bộ môn",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Xóa thành công (No Content)"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy bộ môn"
+                    },
+                    "409": {
+                        "description": "Không thể xóa (còn dữ liệu liên quan)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/leaverequests": {
@@ -348,9 +1393,15 @@
                             "schema": {
                                 "required": [
                                     "schedule_id",
-                                    "reason"
+                                    "reason",
+                                    "user_id"
                                 ],
                                 "properties": {
+                                    "user_id": {
+                                        "description": "ID của giáo viên (từ app Flutter)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "schedule_id": {
                                         "description": "ID của lịch dạy muốn nghỉ",
                                         "type": "integer",
@@ -369,12 +1420,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Gửi yêu cầu thành công",
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
+                        "description": "Gửi yêu cầu thành công"
                     },
                     "401": {
                         "description": "Chưa đăng nhập"
@@ -405,9 +1451,15 @@
                             "schema": {
                                 "required": [
                                     "schedule_id",
-                                    "reason"
+                                    "reason",
+                                    "user_id"
                                 ],
                                 "properties": {
+                                    "user_id": {
+                                        "description": "ID của giáo viên (từ app Flutter)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "schedule_id": {
                                         "description": "ID của lịch dạy muốn nghỉ",
                                         "type": "integer",
@@ -550,36 +1602,453 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Thành công",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "leave_request_id": {
-                                                "type": "integer"
-                                            },
-                                            "subject_name": {
-                                                "type": "string"
-                                            },
-                                            "leave_status": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "pending",
-                                                    "approved",
-                                                    "rejected"
-                                                ]
-                                            },
-                                            "reason": {
-                                                "type": "string"
-                                            }
-                                        },
-                                        "type": "object"
+                        "description": "Thành công"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lecturers": {
+            "get": {
+                "tags": [
+                    "Lecturers"
+                ],
+                "summary": "Lấy danh sách Giảng viên",
+                "description": "Lấy danh sách tất cả người dùng có vai trò 'teacher'.",
+                "operationId": "03455bf7852f97bd0550d44a796561ee",
+                "responses": {
+                    "200": {
+                        "description": "Thành công. Trả về một mảng các giảng viên."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Lecturers"
+                ],
+                "summary": "Tạo Giảng viên mới",
+                "operationId": "b51cd2f26f06695299ac60941d7630b8",
+                "requestBody": {
+                    "description": "Dữ liệu để tạo giảng viên mới",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "department_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Nguyễn Văn A"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "nguyenvana@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "0912345678",
+                                        "nullable": true
+                                    },
+                                    "date_of_birth": {
+                                        "description": "Định dạng dd/mm/YYYY",
+                                        "type": "string",
+                                        "example": "25/10/1990",
+                                        "nullable": true
                                     }
-                                }
+                                },
+                                "type": "object"
                             }
                         }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tạo thành công"
+                    },
+                    "422": {
+                        "description": "Lỗi validation (dữ liệu không hợp lệ)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lecturers/{lecturer}": {
+            "get": {
+                "tags": [
+                    "Lecturers"
+                ],
+                "summary": "Lấy thông tin 1 Giảng viên",
+                "operationId": "c007711ad41feeac6127b19cf82b7db2",
+                "parameters": [
+                    {
+                        "name": "lecturer",
+                        "in": "path",
+                        "description": "ID của giảng viên (user ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy giảng viên"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Lecturers"
+                ],
+                "summary": "Cập nhật thông tin Giảng viên",
+                "operationId": "ac7219cfb80e30d32a2a9c121a7e167a",
+                "parameters": [
+                    {
+                        "name": "lecturer",
+                        "in": "path",
+                        "description": "ID của giảng viên (user ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Dữ liệu cập nhật của giảng viên. Lưu ý: Mật khẩu không được cập nhật qua route này.",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "department_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Nguyễn Văn B"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "nguyenvana@example.com"
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "0912345678",
+                                        "nullable": true
+                                    },
+                                    "date_of_birth": {
+                                        "description": "Định dạng dd/mm/YYYY",
+                                        "type": "string",
+                                        "example": "25/10/1990",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy giảng viên"
+                    },
+                    "422": {
+                        "description": "Lỗi validation (dữ liệu không hợp lệ)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Lecturers"
+                ],
+                "summary": "Xóa Giảng viên",
+                "operationId": "28f3fe50b79312789c5bfc3b5a3ecc30",
+                "parameters": [
+                    {
+                        "name": "lecturer",
+                        "in": "path",
+                        "description": "ID của giảng viên (user ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Xóa giảng viên thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy giảng viên"
+                    },
+                    "500": {
+                        "description": "Lỗi khi xóa giảng viên"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/majors": {
+            "get": {
+                "tags": [
+                    "Majors"
+                ],
+                "summary": "Lấy danh sách Ngành học",
+                "description": "Hiển thị danh sách Ngành học (cho Bảng dữ liệu), đã sắp xếp.",
+                "operationId": "8f2ef87d914e72d7d719fc98948cbaec",
+                "responses": {
+                    "200": {
+                        "description": "Thành công. Trả về một mảng các ngành học."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Majors"
+                ],
+                "summary": "Tạo Ngành học mới",
+                "description": "Lưu một Ngành học mới vào database.",
+                "operationId": "d3b733c8f38201df32041904e38e9374",
+                "requestBody": {
+                    "description": "Dữ liệu của ngành học mới",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ma_nganh",
+                                    "ten_nganh",
+                                    "khoa_id"
+                                ],
+                                "properties": {
+                                    "ma_nganh": {
+                                        "type": "string",
+                                        "example": "7480201"
+                                    },
+                                    "ten_nganh": {
+                                        "type": "string",
+                                        "example": "Công nghệ Thông tin"
+                                    },
+                                    "khoa_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "mo_ta": {
+                                        "type": "string",
+                                        "example": "Mô tả về ngành học...",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tạo thành công"
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ (Validation error)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/majors/{major}": {
+            "get": {
+                "tags": [
+                    "Majors"
+                ],
+                "summary": "Lấy chi tiết 1 Ngành học",
+                "description": "Hiển thị chi tiết một Ngành học, bao gồm cả danh sách giảng viên.",
+                "operationId": "25dd6b5403479b9aefcf9934cec7a830",
+                "parameters": [
+                    {
+                        "name": "major",
+                        "in": "path",
+                        "description": "ID của ngành học",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy ngành học"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Majors"
+                ],
+                "summary": "Cập nhật Ngành học",
+                "description": "Cập nhật thông tin một Ngành học đã tồn tại.",
+                "operationId": "ca47783ce33a3abc305530d24329ce98",
+                "parameters": [
+                    {
+                        "name": "major",
+                        "in": "path",
+                        "description": "ID của ngành học",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Dữ liệu cập nhật của ngành học",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ma_nganh",
+                                    "ten_nganh",
+                                    "khoa_id"
+                                ],
+                                "properties": {
+                                    "ma_nganh": {
+                                        "type": "string",
+                                        "example": "7480201"
+                                    },
+                                    "ten_nganh": {
+                                        "type": "string",
+                                        "example": "Công nghệ Thông tin (Updated)"
+                                    },
+                                    "khoa_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "mo_ta": {
+                                        "type": "string",
+                                        "example": "Mô tả đã cập nhật...",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy ngành học"
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ (Validation error)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Majors"
+                ],
+                "summary": "Xóa Ngành học",
+                "description": "Xóa một Ngành học.",
+                "operationId": "2902115c5d4881a4131a9b56e48d52d9",
+                "parameters": [
+                    {
+                        "name": "major",
+                        "in": "path",
+                        "description": "ID của ngành học",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Xóa thành công (No Content)"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy ngành học"
+                    },
+                    "409": {
+                        "description": "Không thể xóa (còn ràng buộc dữ liệu)"
                     }
                 },
                 "security": [
@@ -829,16 +2298,29 @@
                 ]
             }
         },
-        "/api/schedules": {
+        "/api/rooms": {
             "get": {
                 "tags": [
-                    "Schedules (CRUD)"
+                    "Rooms"
                 ],
-                "summary": "Lấy danh sách Lịch học (Chưa triển khai)",
-                "operationId": "getSchedulesList",
+                "summary": "Lấy danh sách phòng học (phân trang)",
+                "description": "Lấy danh sách tất cả phòng học, có phân trang (10 phòng/trang).",
+                "operationId": "db2a0f9c242ba089e87d5ae1fa8e14c5",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Số trang cần lấy",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Chưa triển khai"
+                        "description": "Thành công. Trả về đối tượng phân trang."
                     }
                 },
                 "security": [
@@ -849,13 +2331,66 @@
             },
             "post": {
                 "tags": [
-                    "Schedules (CRUD)"
+                    "Rooms"
                 ],
-                "summary": "Tạo Lịch học (Chưa triển khai)",
-                "operationId": "storeSchedule",
+                "summary": "Thêm một phòng học mới",
+                "operationId": "809158a6b73bac8545f93f5b9f8a8a8a",
+                "requestBody": {
+                    "description": "Dữ liệu phòng học mới",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "building",
+                                    "floor",
+                                    "capacity",
+                                    "room_type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Phòng 701"
+                                    },
+                                    "building": {
+                                        "type": "string",
+                                        "example": "Nhà A5"
+                                    },
+                                    "floor": {
+                                        "type": "integer",
+                                        "example": 7
+                                    },
+                                    "capacity": {
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "room_type": {
+                                        "type": "string",
+                                        "example": "Phòng học lý thuyết"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Hoạt động",
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Có máy chiếu, 2 điều hòa",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
-                    "200": {
-                        "description": "Chưa triển khai"
+                    "201": {
+                        "description": "Tạo thành công"
+                    },
+                    "422": {
+                        "description": "Lỗi validation (dữ liệu không hợp lệ)"
                     }
                 },
                 "security": [
@@ -865,17 +2400,18 @@
                 ]
             }
         },
-        "/api/schedules/{schedule}": {
+        "/api/rooms/{room}": {
             "get": {
                 "tags": [
-                    "Schedules (CRUD)"
+                    "Rooms"
                 ],
-                "summary": "Lấy 1 Lịch học (Chưa triển khai)",
-                "operationId": "getScheduleById",
+                "summary": "Lấy thông tin chi tiết một phòng học",
+                "operationId": "754d58756a0cc6c2aae5b8b085a9b586",
                 "parameters": [
                     {
-                        "name": "schedule",
+                        "name": "room",
                         "in": "path",
+                        "description": "ID của phòng học",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -884,7 +2420,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Chưa triển khai"
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy phòng học"
                     }
                 },
                 "security": [
@@ -895,23 +2434,80 @@
             },
             "put": {
                 "tags": [
-                    "Schedules (CRUD)"
+                    "Rooms"
                 ],
-                "summary": "Cập nhật Lịch học (Chưa triển khai)",
-                "operationId": "updateSchedule",
+                "summary": "Cập nhật thông tin phòng học",
+                "operationId": "447ae83292e765bb69793a682a6e09ae",
                 "parameters": [
                     {
-                        "name": "schedule",
+                        "name": "room",
                         "in": "path",
+                        "description": "ID của phòng học",
                         "required": true,
                         "schema": {
                             "type": "integer"
                         }
                     }
                 ],
+                "requestBody": {
+                    "description": "Dữ liệu cập nhật của phòng học",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "building",
+                                    "floor",
+                                    "capacity",
+                                    "room_type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Phòng 701 (Đã sửa)"
+                                    },
+                                    "building": {
+                                        "type": "string",
+                                        "example": "Nhà A5"
+                                    },
+                                    "floor": {
+                                        "type": "integer",
+                                        "example": 7
+                                    },
+                                    "capacity": {
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "room_type": {
+                                        "type": "string",
+                                        "example": "Phòng học lý thuyết"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Hoạt động",
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Có máy chiếu, 2 điều hòa",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "Chưa triển khai"
+                        "description": "Cập nhật thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy phòng học"
+                    },
+                    "422": {
+                        "description": "Lỗi validation (dữ liệu không hợp lệ)"
                     }
                 },
                 "security": [
@@ -922,14 +2518,15 @@
             },
             "delete": {
                 "tags": [
-                    "Schedules (CRUD)"
+                    "Rooms"
                 ],
-                "summary": "Xóa Lịch học (Chưa triển khai)",
-                "operationId": "deleteSchedule",
+                "summary": "Xóa một phòng học",
+                "operationId": "ef6424e636121a7afb64777b06028a3a",
                 "parameters": [
                     {
-                        "name": "schedule",
+                        "name": "room",
                         "in": "path",
+                        "description": "ID của phòng học",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -937,122 +2534,11 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Chưa triển khai"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/users/{user}/schedules-by-date": {
-            "get": {
-                "tags": [
-                    "Schedules"
-                ],
-                "summary": "Lấy lịch dạy (theo ngày) của giáo viên (cho dropdown xin nghỉ)",
-                "operationId": "getSchedulesByDateForTeacher",
-                "parameters": [
-                    {
-                        "name": "user",
-                        "in": "path",
-                        "description": "ID của giáo viên",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
+                    "204": {
+                        "description": "Xóa thành công (No Content)"
                     },
-                    {
-                        "name": "date",
-                        "in": "query",
-                        "description": "Ngày cần lấy lịch (Y-m-d)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "date",
-                            "example": "2025-10-24"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Thành công",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "schedule_id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "display_name": {
-                                                "type": "string",
-                                                "example": "Lập trình Web (IT1) - 1-2"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Lỗi validate ngày"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/users/{user}/available-schedules-for-leave": {
-            "get": {
-                "tags": [
-                    "Schedules"
-                ],
-                "summary": "Lấy lịch dạy SẮP TỚI của giáo viên (để chọn khi xin nghỉ)",
-                "operationId": "getAvailableSchedulesForLeave",
-                "parameters": [
-                    {
-                        "name": "user",
-                        "in": "path",
-                        "description": "ID của giáo viên",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Thành công",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "schedule_id": {
-                                                "type": "integer",
-                                                "example": 10
-                                            },
-                                            "display_name": {
-                                                "type": "string",
-                                                "example": "24/10/2025 - 1-2 - Lập trình Web (IT1)"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
+                    "404": {
+                        "description": "Không tìm thấy phòng học"
                     }
                 },
                 "security": [
@@ -1613,6 +3099,34 @@
     },
     "tags": [
         {
+            "name": "Class Course Assignments",
+            "description": "Các API liên quan đến quản lý Lớp Học Phần (Quản trị viên)"
+        },
+        {
+            "name": "Courses",
+            "description": "Các API liên quan đến quản lý Học Phần"
+        },
+        {
+            "name": "Departments",
+            "description": "Các API liên quan đến quản lý Khoa"
+        },
+        {
+            "name": "Divisions",
+            "description": "Các API liên quan đến quản lý Bộ Môn"
+        },
+        {
+            "name": "Lecturers",
+            "description": "Các API liên quan đến quản lý Giảng viên (User role='teacher')"
+        },
+        {
+            "name": "Majors",
+            "description": "Các API liên quan đến quản lý Ngành học"
+        },
+        {
+            "name": "Rooms",
+            "description": "Các API liên quan đến quản lý Phòng học"
+        },
+        {
             "name": "Attendance",
             "description": "Attendance"
         },
@@ -1627,14 +3141,6 @@
         {
             "name": "Makeup Classes",
             "description": "Makeup Classes"
-        },
-        {
-            "name": "Schedules (CRUD)",
-            "description": "Schedules (CRUD)"
-        },
-        {
-            "name": "Schedules",
-            "description": "Schedules"
         },
         {
             "name": "Users (CRUD)",
