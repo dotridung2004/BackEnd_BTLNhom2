@@ -8,7 +8,7 @@ use App\Models\Department;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
-use OpenApi\Annotations as OA; // <-- THÊM DÒNG NÀY
+use OpenApi\Annotations as OA;
 
 /**
  * @OA\Tag(
